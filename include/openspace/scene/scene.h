@@ -124,6 +124,7 @@ private:
 
     // actual scenegraph
     SceneGraph _graph;
+    std::unique_ptr<Camera> _camera;
     //SceneGraphNode* _root;
     //std::vector<SceneGraphNode*> _nodes;
     //std::map<std::string, SceneGraphNode*> _allNodes;

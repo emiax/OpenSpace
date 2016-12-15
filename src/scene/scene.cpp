@@ -248,6 +248,11 @@ bool Scene::loadSceneInternal(const std::string& sceneDescriptionFilePath) {
     for (auto it = _graph.nodes().rbegin(); it != _graph.nodes().rend(); ++it)
         (*it)->calculateBoundingSphere();
 
+
+    _camera = std::make_unique<Camera>();
+    OsEng.renderEngine().setCamera(_camera.get());
+    OsEng.interactionHandler().setCamera(_camera.get());
+
     // Read the camera dictionary and set the camera state
     ghoul::Dictionary cameraDictionary;
     if (dictionary.getValue(KeyCamera, cameraDictionary)) {

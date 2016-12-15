@@ -489,15 +489,15 @@ bool OpenSpaceEngine::initialize() {
     loadFonts();
 
     // Initialize the Scene
-    Scene* sceneGraph = new Scene;
-    sceneGraph->initialize();
+    _scene = std::make_unique<Scene>();
+    _scene->initialize();
     
     std::string scenePath = "";
     configurationManager().getValue(ConfigurationManager::KeyConfigScene, scenePath);
-    sceneGraph->scheduleLoadSceneFile(scenePath);
+    _scene->scheduleLoadSceneFile(scenePath);
 
     // Initialize the RenderEngine
-    _renderEngine->setSceneGraph(sceneGraph);
+    _renderEngine->setScene(_scene.get());
     _renderEngine->initialize();
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);
@@ -883,7 +883,7 @@ void OpenSpaceEngine::preSynchronization() {
 
         _interactionHandler->updateInputStates(dt);
         
-        _renderEngine->updateSceneGraph();
+        _renderEngine->updateScene();
         _interactionHandler->updateCamera(dt);
         _renderEngine->camera()->invalidateCache();
 
@@ -902,7 +902,7 @@ void OpenSpaceEngine::postSynchronizationPreDraw() {
         _shutdownCountdown -= _windowWrapper->averageDeltaTime();
     }
 
-    _renderEngine->updateSceneGraph();
+    _renderEngine->updateScene();
     _renderEngine->updateFade();
     _renderEngine->updateRenderer();
     _renderEngine->updateScreenSpaceRenderables();
