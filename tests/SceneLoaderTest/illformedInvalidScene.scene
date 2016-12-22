@@ -1,6 +1,6 @@
 -- Malformed script
 return {
-    ScenePath = "nonExistingScenePath",
+    ScenePath = 1337,
     Modules = {
     }
 }

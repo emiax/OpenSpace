@@ -50,6 +50,13 @@ TEST(SceneLoaderTest, IllformedFileTest) {
 
 
 TEST(SceneLoaderTest, IllformedFileTestInvalidSceneFolder) {
+    const std::string file = absPath("${TESTDIR}/SceneLoaderTest/illformedInvalidScene.scene");
+
+    openspace::SceneLoader loader;
+    EXPECT_THROW(loader.loadScene(file), openspace::documentation::SpecificationError);
+}
+
+TEST(SceneLoaderTest, IllformedFileTestWrongType) {
     const std::string file = absPath("${TESTDIR}/SceneLoaderTest/illformedWrongType.scene");
 
     openspace::SceneLoader loader;
