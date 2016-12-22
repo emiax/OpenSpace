@@ -57,10 +57,6 @@ namespace {
 
 namespace openspace {
 
-SceneGraph::SceneGraphNodeInternal::~SceneGraphNodeInternal() {
-    delete node;
-}
-
 SceneGraph::SceneGraph()
     : _rootNode(nullptr)
 {}
@@ -71,14 +67,15 @@ SceneGraph::~SceneGraph() {
 
 void SceneGraph::clear() {
     // Untested ---abock
-    for (SceneGraphNodeInternal* n : _nodes)
-        delete n;
-
     _nodes.clear();
     _rootNode = nullptr;
 }
 
-bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
+void SceneGraph::setRootNode(std::unique_ptr<SceneGraphNode> root) {
+    _rootNode = std::move(root);
+}
+
+/*bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
     clear(); // Move this to a later stage to retain a proper scenegraph when the loading fails ---abock
 
     std::string absSceneFile = absPath(sceneDescription);
@@ -192,7 +189,7 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
     _rootNode = new SceneGraphNode;
     _rootNode->setName(SceneGraphNode::RootNodeName);
     SceneGraphNodeInternal* internalRoot = new SceneGraphNodeInternal;
-    internalRoot->node = _rootNode;
+    internalRoot->node = std::unique_ptr<SceneGraphNode>(_rootNode);
     _nodes.push_back(internalRoot);
 
     std::sort(keys.begin(), keys.end());
@@ -311,7 +308,7 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
                 
                 FileSys.setCurrentDirectory(modulePath);
                 LDEBUGC("Create from dictionary", "Node name: " << nodeName << "  Parent name:" << parentName << "  Path: " << modulePath);
-                SceneGraphNode* node = SceneGraphNode::createFromDictionary(element);
+                std::unique_ptr<SceneGraphNode> node = SceneGraphNode::createFromDictionary(element);
                 if (node == nullptr) {
                     LERROR("Error loading SceneGraphNode '" << nodeName << "' in module '" << moduleName << "'");
                     continue;
@@ -339,7 +336,7 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
                 
                 
                 SceneGraphNodeInternal* internalNode = new SceneGraphNodeInternal;
-                internalNode->node = node;
+                internalNode->node = std::move(node);
                 _nodes.push_back(internalNode);
             }
         };
@@ -362,7 +359,7 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
     FileSys.setCurrentDirectory(oldDirectory);
 
     for (SceneGraphNodeInternal* node : _nodes) {
-        if (node->node == _rootNode)
+        if (node->node.get() == _rootNode)
             continue;
         std::string parent = parents[node->node->name()];
         SceneGraphNode* parentNode = sceneGraphNode(parent);
@@ -372,7 +369,7 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
         }
 
         node->node->setParent(parentNode);
-        parentNode->addChild(node->node);
+        parentNode->addChild(node->node.get());
         
     }
 
@@ -411,9 +408,9 @@ bool SceneGraph::loadFromFile(const std::string& sceneDescription) {
     }
     
     return true;
-}
+}*/
 
-bool SceneGraph::nodeIsDependentOnRoot(SceneGraphNodeInternal* node) {
+/*bool SceneGraph::nodeIsDependentOnRoot(SceneGraphNodeInternal* node) {
     if (node->node->name() == SceneGraphNode::RootNodeName)
         return true;
     else {
@@ -424,9 +421,9 @@ bool SceneGraph::nodeIsDependentOnRoot(SceneGraphNodeInternal* node) {
         }
         return false;
     }
-}
+}*/
 
-bool SceneGraph::sortTopologically() {
+/*bool SceneGraph::sortTopologically() {
     if (_nodes.empty())
         return true;
 
@@ -447,7 +444,7 @@ bool SceneGraph::sortTopologically() {
     while (!zeroInDegreeNodes.empty()) {
         SceneGraphNodeInternal* node = zeroInDegreeNodes.top();
 
-        _topologicalSortedNodes.push_back(node->node);
+        _topologicalSortedNodes.push_back(node->node.get());
         zeroInDegreeNodes.pop();
 
         //for (SceneGraphNodeInternal* n : node->outgoingEdges) {
@@ -460,20 +457,20 @@ bool SceneGraph::sortTopologically() {
     }
     
     return true;
-}
+}*/
 
-bool SceneGraph::addSceneGraphNode(SceneGraphNode* node) {
+/*bool SceneGraph::addSceneGraphNode(std::unique_ptr<SceneGraphNode> node) {
     // @TODO rework this ---abock
     ghoul_assert(node, "Node must not be nullptr");
 
     SceneGraphNodeInternal* internalNode = new SceneGraphNodeInternal;
-    internalNode->node = node;
+    internalNode->node = std::move(node);
 
     auto it = std::find_if(
         _nodes.begin(),
         _nodes.end(),
-        [node](SceneGraphNodeInternal* i) {
-            return i->node == node->parent();
+        [&node](SceneGraphNodeInternal* i) {
+            return i->node.get() == node->parent();
         }
     );
 
@@ -500,7 +497,7 @@ bool SceneGraph::removeSceneGraphNode(SceneGraphNode* node) {
         _nodes.begin(),
         _nodes.end(),
         [node](SceneGraphNodeInternal* i) {
-            return i->node == node;
+            return i->node.get() == node;
         }
     );
 
@@ -517,28 +514,10 @@ bool SceneGraph::removeSceneGraphNode(SceneGraphNode* node) {
         OsEng.interactionHandler().setFocusNode(node->parent());
 
     sortTopologically();
-
-#if 0
-    SceneGraphNodeInternal* parentInternalNode = nodeByName(node->parent()->name());
-    ghoul_assert(parentInternalNode, "Could not find internal parent node");
-
-    // Reparent its children to its parent
-    for (SceneGraphNode* c : node->children())
-        c->setParent(node->parent());
-
-    // Reset the dependencies accordingly
-    // VERY untested ---abock
-    for (SceneGraphNodeInternal* c : internalNode->incomingEdges) {
-        parentInternalNode->outgoingEdges.insert(parentInternalNode->outgoingEdges.end(), c->outgoingEdges.begin(), c->outgoingEdges.end());
-        parentInternalNode->incomingEdges.insert(parentInternalNode->incomingEdges.end(), c->incomingEdges.begin(), c->incomingEdges.end());
-    }
-
-#endif
-
     return true;
-}
+}*/
 
-SceneGraph::SceneGraphNodeInternal* SceneGraph::nodeByName(const std::string& name) {
+/*SceneGraph::SceneGraphNodeInternal* SceneGraph::nodeByName(const std::string& name) {
     auto it = std::find_if(
         _nodes.begin(),
         _nodes.end(),
@@ -547,30 +526,31 @@ SceneGraph::SceneGraphNodeInternal* SceneGraph::nodeByName(const std::string& na
         }
     );
 
-    if (it == _nodes.end())
+    if (it == _nodes.end()) {
         return nullptr;
-    else
+    } else {
         return *it;
-}
+    }
+}*/
 
 const std::vector<SceneGraphNode*>& SceneGraph::nodes() const {
-    return _topologicalSortedNodes;
+    return _nodes;
 }
 
 SceneGraphNode* SceneGraph::rootNode() const {
-    return _rootNode;
+    return _rootNode.get();
 }
 
 SceneGraphNode* SceneGraph::sceneGraphNode(const std::string& name) const {
     auto it = std::find_if(
         _nodes.begin(),
         _nodes.end(),
-        [name](SceneGraphNodeInternal* node) {
-            return node->node->name() == name;
+        [name](SceneGraphNode* node) {
+            return node->name() == name;
         }
     );
     if (it != _nodes.end())
-        return (*it)->node;
+        return *it;
     else
         return nullptr;
 }

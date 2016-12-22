@@ -1,7 +1,6 @@
 -- Malformed script
 return {
-    ScenePath = "foobar",
-    CommonFolder = "",
+    ScenePath = "nonExistingScenePath",
     Modules = {
     }
 }

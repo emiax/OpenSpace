@@ -24,81 +24,58 @@
 
 #include "gtest/gtest.h"
 
+#include <openspace/scene/sceneloader.h>
 #include <openspace/scene/scenegraphnode.h>
+#include <openspace/documentation/documentation.h>
 
+#include <ghoul/lua/lua_helper.h>
 #include <fstream>
 
-class SceneGraphLoaderTest : public testing::Test {};
 
-//TEST_F(SceneGraphLoaderTest, NonExistingFileTest) {
-//    const std::string file = "NonExistingFile";
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, IllformedFileTest) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformed.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, IllformedFileTestWrongCommonFolderType) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedWrongType.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, IllformedFileTestInvalidSceneFolder) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedInvalidScene.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, IllformedFileTestWrongCommonFolder) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedWrongCommon.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, IllformedFileTestNonExistingCommonFolder) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedNonExistingCommon.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    EXPECT_FALSE(success) << "Unsuccessful loading";
-//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
-//}
-//
-//TEST_F(SceneGraphLoaderTest, Test00) {
-//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/test00.scene");
-//
-//    std::vector<openspace::SceneGraphNode*> nodes;
-//    bool success = openspace::SceneGraphLoader::load(file, nodes);
-//
-//    ASSERT_TRUE(success) << "Successful loading";
-//    EXPECT_TRUE(nodes.empty()) << "No scenegraph nodes loaded";
-//}
+//class SceneLoaderTest : public testing::Test {};
+
+TEST(SceneLoaderTest, NonExistingFileTest) {
+    const std::string file = absPath("NonExistingFile");
+
+    openspace::SceneLoader loader;
+    EXPECT_THROW(loader.loadScene(file), ghoul::FileNotFoundError);
+}
+
+TEST(SceneLoaderTest, IllformedFileTest) {
+    const std::string file = absPath("${TESTDIR}/SceneLoaderTest/illformed.scene");
+
+    openspace::SceneLoader loader;
+    EXPECT_THROW(loader.loadScene(file), ghoul::lua::LuaRuntimeException);
+}
+
+
+TEST(SceneLoaderTest, IllformedFileTestInvalidSceneFolder) {
+    const std::string file = absPath("${TESTDIR}/SceneLoaderTest/illformedWrongType.scene");
+
+    openspace::SceneLoader loader;
+    EXPECT_THROW(loader.loadScene(file), openspace::documentation::SpecificationError);
+}
+
+TEST(SceneLoaderTest, Test00) {
+    const std::string file = absPath("${TESTDIR}/SceneLoaderTest/test00.scene");
+
+    openspace::SceneLoader loader;
+    std::unique_ptr<openspace::Scene> scene;
+    
+    EXPECT_NO_THROW(
+    try {
+        scene = loader.loadScene(file);
+    } catch (ghoul::RuntimeError& e) {
+        std::cout << e.message << ":" << e.component << std::endl;
+        throw e;
+    });
+
+    ASSERT_NE(scene, nullptr) << "loadScene returned nullptr";
+    
+    std::vector<openspace::SceneGraphNode*> nodes = scene->allSceneGraphNodes();
+    EXPECT_EQ(nodes.size(), 1) << "Scene does only have a root node";
+}
+
 //
 //TEST_F(SceneGraphLoaderTest, Test00Location) {
 //    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/test00-location.scene");
@@ -377,5 +354,24 @@ class SceneGraphLoaderTest : public testing::Test {};
 ////}
 //
 
+//
+//TEST_F(SceneGraphLoaderTest, IllformedFileTestWrongCommonFolder) {
+//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedWrongCommon.scene");
+//
+//    std::vector<openspace::SceneGraphNode*> nodes;
+//    bool success = openspace::SceneGraphLoader::load(file, nodes);
+//
+//    EXPECT_FALSE(success) << "Unsuccessful loading";
+//    EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
+//}
+//
 
 
+//TEST_F(SceneLoaderTest, IllformedFileTestNonExistingCommonFolder) {
+//    const std::string file = absPath("${TESTDIR}/SceneGraphLoaderTest/illformedNonExistingCommon.scene");
+//
+//    std::vector<openspace::SceneGraphNode*> nodes;
+//    bool success = openspace::SceneGraphLoader::load(file, nodes);
+//    EXPECT_FALSE(success) << "Unsuccessful loading";
+//   EXPECT_TRUE(nodes.empty()) << "Empty scenegraph nodes list";
+//}

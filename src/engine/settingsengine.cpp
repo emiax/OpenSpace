@@ -153,7 +153,8 @@ void SettingsEngine::initSceneFiles() {
             std::string sceneFile = _scenes.getDescriptionByValue(_scenes);
             OsEng.configurationManager().setValue(
                 ConfigurationManager::KeyConfigScene, sceneFile);
-            OsEng.renderEngine().scene()->scheduleLoadSceneFile(sceneFile);
+            //OsEng.renderEngine().scene()->scheduleLoadSceneFile(sceneFile);
+            // TODO: Actually load the scene file.
         }
     );
 }

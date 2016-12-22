@@ -1,7 +1,6 @@
--- Malformed script
+-- Loading an empty common and module dictionary 
 return {
     ScenePath = ".",
-    CommonFolder = 2,
     Modules = {
     }
 }

@@ -172,7 +172,7 @@ bool RenderEngine::deinitialize() {
 
     MissionManager::deinitialize();
 
-    _scene->clearSceneGraph();
+    _scene->clear();
     return true;
 }
 

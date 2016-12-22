@@ -47,7 +47,7 @@
 #include <openspace/scripting/scriptengine.h>
 #include <openspace/scripting/scriptscheduler.h>
 #include <openspace/scene/translation.h>
-#include <openspace/scene/scene.h>
+#include <openspace/scene/scenemanager.h>
 #include <openspace/util/factorymanager.h>
 #include <openspace/util/time.h>
 #include <openspace/util/timemanager.h>
@@ -123,6 +123,8 @@ namespace openspace {
 namespace properties {
     class Property;
 }
+
+class Scene;
     
 OpenSpaceEngine* OpenSpaceEngine::_engine = nullptr;
 
@@ -131,6 +133,7 @@ OpenSpaceEngine::OpenSpaceEngine(std::string programName,
     : _configurationManager(new ConfigurationManager)
     , _interactionHandler(new interaction::InteractionHandler)
     , _renderEngine(new RenderEngine)
+    , _sceneManager(new SceneManager)
     , _scriptEngine(new scripting::ScriptEngine)
     , _scriptScheduler(new scripting::ScriptScheduler)
     , _networkEngine(new NetworkEngine)
@@ -488,16 +491,22 @@ bool OpenSpaceEngine::initialize() {
     // Load a light and a monospaced font
     loadFonts();
 
-    // Initialize the Scene
-    _scene = std::make_unique<Scene>();
-    _scene->initialize();
+
+    //_scene = std::make_unique<Scene>();
+    //_scene->initialize();
     
     std::string scenePath = "";
     configurationManager().getValue(ConfigurationManager::KeyConfigScene, scenePath);
-    _scene->scheduleLoadSceneFile(scenePath);
+
+    // Initialize the Scene
+    Scene* scene = _sceneManager->loadScene(scenePath);
+
+
+    //_scene->scheduleLoadSceneFile(scenePath);
+
 
     // Initialize the RenderEngine
-    _renderEngine->setScene(_scene.get());
+    _renderEngine->setScene(scene);
     _renderEngine->initialize();
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);

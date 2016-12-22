@@ -21,57 +21,30 @@
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE  *
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
- 
-#ifndef __OPENSPACE_CORE___SCENEGRAPH___H__
-#define __OPENSPACE_CORE___SCENEGRAPH___H__
 
-#include <vector>
-#include <string>
+#include <openspace/scene/scenemanager.h>
+#include <openspace/scene/sceneloader.h>
+#include <algorithm>
 #include <memory>
+#include <openspace/scene/scene.h>
 
 namespace openspace {
 
-class SceneGraphNode;
+Scene* SceneManager::loadScene(const std::string& path) {
+    SceneLoader loader;
+    std::unique_ptr<Scene> scene = loader.loadScene(path);
+    Scene* s = scene.get();
+    if (s) {
+        _scenes.push_back(std::move(scene));
+    }
+    return s;
+}
 
-class SceneGraph {
-public:
-    SceneGraph();
-    ~SceneGraph();
-
-    void clear();
-    //bool loadFromFile(const std::string& sceneDescription);
-
-    // Returns if addition was successful
-    //bool addSceneGraphNode(std::unique_ptr<SceneGraphNode> node);
-    //bool removeSceneGraphNode(SceneGraphNode* node); 
-
-    const std::vector<SceneGraphNode*>& nodes() const;
-
-    SceneGraphNode* rootNode() const;
-    SceneGraphNode* sceneGraphNode(const std::string& name) const;
-
-    void setRootNode(std::unique_ptr<SceneGraphNode> rootNode);
+void SceneManager::unloadScene(Scene& scene) {
+    std::remove_if(_scenes.begin(), _scenes.end(), [&scene] (auto& s) {
+        return s.get() == &scene;
+    });
+}
 
 
-private:
-    /*struct SceneGraphNodeInternal {
-        std::unique_ptr<SceneGraphNode> node = nullptr;
-        // From nodes that are dependent on this one
-        std::vector<SceneGraphNodeInternal*> incomingEdges;
-        // To nodes that this node depends on
-        std::vector<SceneGraphNodeInternal*> outgoingEdges;
-    };*/
-
-    //bool nodeIsDependentOnRoot(SceneGraphNodeInternal* node);
-    //bool sortTopologically();
-
-    //SceneGraphNodeInternal* nodeByName(const std::string& name);
-
-    std::unique_ptr<SceneGraphNode> _rootNode;
-    std::vector<SceneGraphNode*> _nodes;
-    //std::vector<SceneGraphNode*> _topologicalSortedNodes;
-};
-
-} // namespace openspace
-
-#endif // __OPENSPACE_CORE___SCENEGRAPH___H__
+}

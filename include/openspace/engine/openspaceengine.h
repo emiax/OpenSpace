@@ -52,7 +52,7 @@ class ModuleEngine;
 class WindowWrapper;
 class SettingsEngine;
 class TimeManager;
-class Scene;
+class SceneManager;
 class SyncEngine;
 class ParallelConnection;
 
@@ -146,7 +146,7 @@ private:
     std::unique_ptr<ConfigurationManager> _configurationManager;
     std::unique_ptr<interaction::InteractionHandler> _interactionHandler;
     std::unique_ptr<RenderEngine> _renderEngine;
-    std::unique_ptr<Scene> _scene;
+    std::unique_ptr<SceneManager> _sceneManager;
     std::unique_ptr<scripting::ScriptEngine> _scriptEngine;
     std::unique_ptr<scripting::ScriptScheduler> _scriptScheduler;
     std::unique_ptr<NetworkEngine> _networkEngine;

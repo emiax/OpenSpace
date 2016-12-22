@@ -21,57 +21,27 @@
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE  *
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
- 
-#ifndef __OPENSPACE_CORE___SCENEGRAPH___H__
-#define __OPENSPACE_CORE___SCENEGRAPH___H__
+
+#ifndef __OPENSPACE_CORE___SCENEMANAGER___H__
+#define __OPENSPACE_CORE___SCENEMANAGER___H__
 
 #include <vector>
-#include <string>
 #include <memory>
 
 namespace openspace {
 
-class SceneGraphNode;
+class Scene;
 
-class SceneGraph {
+class SceneManager {
 public:
-    SceneGraph();
-    ~SceneGraph();
-
-    void clear();
-    //bool loadFromFile(const std::string& sceneDescription);
-
-    // Returns if addition was successful
-    //bool addSceneGraphNode(std::unique_ptr<SceneGraphNode> node);
-    //bool removeSceneGraphNode(SceneGraphNode* node); 
-
-    const std::vector<SceneGraphNode*>& nodes() const;
-
-    SceneGraphNode* rootNode() const;
-    SceneGraphNode* sceneGraphNode(const std::string& name) const;
-
-    void setRootNode(std::unique_ptr<SceneGraphNode> rootNode);
-
-
+    SceneManager() = default;
+    ~SceneManager() = default;
+    Scene* loadScene(const std::string& path);
+    void unloadScene(Scene& scene);
 private:
-    /*struct SceneGraphNodeInternal {
-        std::unique_ptr<SceneGraphNode> node = nullptr;
-        // From nodes that are dependent on this one
-        std::vector<SceneGraphNodeInternal*> incomingEdges;
-        // To nodes that this node depends on
-        std::vector<SceneGraphNodeInternal*> outgoingEdges;
-    };*/
-
-    //bool nodeIsDependentOnRoot(SceneGraphNodeInternal* node);
-    //bool sortTopologically();
-
-    //SceneGraphNodeInternal* nodeByName(const std::string& name);
-
-    std::unique_ptr<SceneGraphNode> _rootNode;
-    std::vector<SceneGraphNode*> _nodes;
-    //std::vector<SceneGraphNode*> _topologicalSortedNodes;
+    std::vector<std::unique_ptr<Scene>> _scenes;
 };
 
-} // namespace openspace
+}
 
-#endif // __OPENSPACE_CORE___SCENEGRAPH___H__
+#endif  // __OPENSPACE_CORE___SCENEMANAGER___H__

@@ -214,12 +214,13 @@ int loadScene(lua_State* L) {
 
     std::string sceneFile = luaL_checkstring(L, -1);
 
-    OsEng.renderEngine().scene()->scheduleLoadSceneFile(sceneFile);
+    // todo: actually load the scene.
+//    OsEng.renderEngine().scene()->scheduleLoadSceneFile(sceneFile);
 
     return 0;
 }
 
-int addSceneGraphNode(lua_State* L) {
+/*int addSceneGraphNode(lua_State* L) {
     using ghoul::lua::errorLocation;
 
     int nArguments = lua_gettop(L);
@@ -234,7 +235,7 @@ int addSceneGraphNode(lua_State* L) {
         return 0;
     }
 
-    SceneGraphNode* node = SceneGraphNode::createFromDictionary(d);
+    std::unique_ptr<SceneGraphNode> node = SceneGraphNode::createFromDictionary(d);
     
     std::string parent = d.value<std::string>(SceneGraphNode::KeyParentName);
     SceneGraphNode* parentNode = OsEng.renderEngine().scene()->sceneGraphNode(parent);
@@ -247,7 +248,8 @@ int addSceneGraphNode(lua_State* L) {
     }
     node->setParent(parentNode);
     node->initialize();
-    OsEng.renderEngine().scene()->sceneGraph().addSceneGraphNode(node);
+    // TODO: Implement add scene graph node.
+    //OsEng.renderEngine().scene()->sceneGraph().addSceneGraphNode(node);
         
     return 0;
 }
@@ -267,13 +269,13 @@ int removeSceneGraphNode(lua_State* L) {
         );
         return 0;
     }
-
-    OsEng.renderEngine().scene()->sceneGraph().removeSceneGraphNode(node);
+    //TODO: Implement remove scene graph node.
+    //OsEng.renderEngine().scene()->sceneGraph().removeSceneGraphNode(node);
     node->deinitialize();
     delete node;
 
     return 1;
-}
+}*/
 
 } // namespace luascriptfunctions
 

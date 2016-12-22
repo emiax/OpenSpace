@@ -53,8 +53,8 @@ class PerformanceManager;
 // Forward declare to minimize dependencies
 class Camera;
 class SyncBuffer;
-
 class Scene;
+class SceneManager;
 class Renderer;
 class RaycasterManager;
 class ScreenLog;
@@ -86,6 +86,7 @@ public:
 
     void setScene(Scene* scene);
     Scene* scene();
+    void updateScene();
 
     void setCamera(Camera* camera);
     Camera* camera() const;
@@ -97,7 +98,7 @@ public:
     // sgct wrapped functions
     bool initializeGL();
     
-    void updateScene();
+
     void updateShaderPrograms();
     void updateFade();
     void updateRenderer();
