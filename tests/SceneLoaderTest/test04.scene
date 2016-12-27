@@ -1,8 +1,11 @@
--- Circular Dependencies
+-- Multiple Dependencies
 return {
     ScenePath = ".",
     Modules = {
-        "circular-dependency"
+    	"child",
+        "child-and-dependent",
+        "no-dependency",
+        "dependent"
     }
 }
 

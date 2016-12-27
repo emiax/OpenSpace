@@ -3,7 +3,7 @@ return {
     ScenePath = ".",
     Modules = {
         "no-dependency",
-        "direct-dependency"
+        "child"
     }
 }
 

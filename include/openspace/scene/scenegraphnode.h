@@ -92,6 +92,7 @@ public:
     const std::vector<SceneGraphNode*>& dependentNodes() const;
 
     Scene* scene();
+    void setScene(Scene* scene);
 
     glm::dvec3 position() const;
     const glm::dmat3& rotationMatrix() const;

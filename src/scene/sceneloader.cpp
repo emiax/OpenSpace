@@ -364,35 +364,54 @@ ghoul::Dictionary SceneLoader::loadSceneDictionary(const std::string& path, lua_
 
 
 void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& loadedNodes) {
-    
-    std::map<std::string, SceneGraphNode*> allNodes = scene.nodesByName();
-    std::vector<SceneGraphNode*> addedNodes;
+    std::map<std::string, SceneGraphNode*> existingNodes = scene.nodesByName();
+    std::map<std::string, SceneGraphNode*> addedNodes;
+    std::vector<SceneGraphNode*> addedBranches;
 
     // Extend the map from name to nodes with all the new contents.
     for (auto& loadedNode : loadedNodes) {
         std::string name = loadedNode->name;
-        if (allNodes.count(name) > 0) {
-            throw Scene::InvalidSceneError("Duplicate node names '" + name + "'");
+        if (existingNodes.count(name) > 0) {
+            throw Scene::InvalidSceneError("Node with name '" + name + "' already exists in scene");
         }
+        if (addedNodes.count(name) > 0) {
+            throw Scene::InvalidSceneError("Duplicate node names '" + name + "' among loaded nodes");
+        }
+
         SceneGraphNode* node = loadedNode->node.get();
-        allNodes[name] = node;
-        addedNodes.push_back(node);
+        addedNodes[name] = node;
+
+        if (existingNodes.count(loadedNode->parent) == 1) {
+            addedBranches.push_back(node);
+        }
     }
+    
+    auto findNode = [&existingNodes, &addedNodes](const std::string name) {
+        std::map<std::string, SceneGraphNode*>::iterator it;
+        if ((it = existingNodes.find(name)) != existingNodes.end()) {
+            return it->second;
+        }
+        if ((it = addedNodes.find(name)) != addedNodes.end()) {
+            return it->second;
+        }
+        return static_cast<SceneGraphNode*>(nullptr);
+    };
 
     // Attach nodes to each other and set up dependencies.
     for (auto& loadedNode : loadedNodes) {
         std::string parentName = loadedNode->parent;
         std::vector<std::string> dependencyNames = loadedNode->dependencies;
 
-        SceneGraphNode* parent = allNodes[parentName];
-        if (parent == nullptr) {
+        SceneGraphNode* parent = findNode(parentName);
+
+        if (!parent) {
             throw Scene::InvalidSceneError("Could not find parent '" + parentName + "' for '" + loadedNode->name + "'");
         }
-
+        
         std::vector<SceneGraphNode*> dependencies;
         for (const auto& depName : dependencyNames) {
-            SceneGraphNode* dep = allNodes[depName];
-            if (dep == nullptr) {
+            SceneGraphNode* dep = findNode(depName);
+            if (!dep) {
                 throw Scene::InvalidSceneError("Could not find dependency '" + depName + "' for '" + loadedNode->name + "'");
             }
             dependencies.push_back(dep);
@@ -402,24 +421,28 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
 
         parent->attachChild(std::move(loadedNode->node), SceneGraphNode::UpdateScene::No);
         child->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
-
-        //parent->addChild(loadedNode->node.get());
-
     }
 
     // Add the nodes to the scene and update dependencies.
-    for (auto& node : addedNodes) {
+    for (auto& node : addedBranches) {
         scene.addNode(node, Scene::UpdateDependencies::No);
+    }
+
+    for (auto& p : addedNodes) {
+        SceneGraphNode* node = p.second;
+        if (!node->scene()) {
+            LWARNING("Node '" << node->name() << "' is not connected to the root and will not be added to the scene");
+        }
     }
 
     try {
         scene.updateDependencies();
     } catch (Scene::InvalidSceneError e) {
-        for (SceneGraphNode* addedNode : addedNodes) {
+        //for (SceneGraphNode* addedBranch : addedBranches) {
             // Reset the scene to the previous state.
-            addedNode->parent()->detachChild(*addedNode);
-            scene.removeNode(addedNode, Scene::UpdateDependencies::No);
-        }
+            //addedBranch->parent()->detachChild(*addedBranch);
+            //scene.removeNode(addedBranch, Scene::UpdateDependencies::No);
+        //}
         throw e;
     }
 }

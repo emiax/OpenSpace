@@ -2,9 +2,8 @@
 return {
     ScenePath = ".",
     Modules = {
-        "multiple-dependencies",
         "no-dependency",
-        "direct-dependency"
+        "dependent"
     }
 }
 

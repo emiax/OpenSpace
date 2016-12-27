@@ -143,6 +143,7 @@ std::unique_ptr<SceneGraphNode> SceneGraphNode::createFromDictionary(const ghoul
 
 SceneGraphNode::SceneGraphNode()
     : _parent(nullptr)
+    , _scene(nullptr)
     , _transform {
         std::make_unique<StaticTranslation>(),
         std::make_unique<StaticRotation>(),
@@ -398,7 +399,12 @@ void SceneGraphNode::attachChild(std::unique_ptr<SceneGraphNode> child, UpdateSc
     ghoul_assert(child->parent() == nullptr, "Child may not already have a parent");
 
     child->_parent = this;
+    if (_scene) {
+        child->setScene(_scene);
+    }
+
    _children.push_back(std::move(child));
+
    if (_scene && updateScene) {
        _scene->addNode(child.get());
    }
@@ -425,9 +431,12 @@ std::unique_ptr<SceneGraphNode> SceneGraphNode::detachChild(SceneGraphNode& chil
     if (_scene && updateScene) {
         _scene->removeNode(&child);
     }
+
+    if (_scene) {
+        setScene(nullptr);
+    }
     return std::move(c);
 }
-
 
 void SceneGraphNode::addDependency(SceneGraphNode& dependency, UpdateScene updateScene) {
     dependency._dependentNodes.push_back(this);
@@ -477,7 +486,12 @@ void SceneGraphNode::clearDependencies(UpdateScene updateScene) {
 }
 
 void SceneGraphNode::setDependencies(const std::vector<SceneGraphNode*>& dependencies, UpdateScene updateScene) {
-    clearDependencies();
+    clearDependencies(UpdateScene::No);
+
+    _dependencies = dependencies;
+    for (auto& dependency : dependencies) {
+        dependency->_dependentNodes.push_back(this);
+    }
 
     if (_scene && updateScene) {
         _scene->updateDependencies();
@@ -563,6 +577,12 @@ SceneGraphNode* SceneGraphNode::parent() const {
 
 Scene* SceneGraphNode::scene() {
     return _scene;
+}
+
+void SceneGraphNode::setScene(Scene* scene) {
+    traversePreOrder([scene](SceneGraphNode* node) {
+        node->_scene = scene;
+    });
 }
 
 std::vector<SceneGraphNode*> SceneGraphNode::children() const {
@@ -663,7 +683,7 @@ SceneGraphNode* SceneGraphNode::childNode(const std::string& name)
     else
         for (auto& it : _children) {
             SceneGraphNode* tmp = it->childNode(name);
-            if (tmp != nullptr)
+            if (tmp)
                 return tmp;
         }
     return nullptr;

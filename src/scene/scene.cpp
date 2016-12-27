@@ -53,6 +53,8 @@
 #include <numeric>
 #include <fstream>
 #include <string>
+#include <stack>
+#include <unordered_map>
 
 #ifdef OPENSPACE_MODULE_ONSCREENGUI_ENABLED
 #include <modules/onscreengui/include/gui.h>
@@ -103,6 +105,7 @@ void Scene::setRoot(std::unique_ptr<SceneGraphNode> root) {
         removeNode(_root.get());
     }
     _root = std::move(root);
+    _root->setScene(this);
     addNode(_root.get());
 }
 
@@ -114,9 +117,6 @@ void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) 
     });
     
     if (updateDeps) {
-        // Todo: Either change the behaviour of this method
-        // to never update deps, or be smarter about how to update deps
-        // based on the fact that only one node has been added.
         updateDependencies();
     }
 }
@@ -129,20 +129,61 @@ void Scene::removeNode(SceneGraphNode* node, Scene::UpdateDependencies updateDep
     });
     
     if (updateDeps) {
-        // Todo: Either change the behaviour of this method
-        // to never update deps, or be smarter about how to update deps
-        // based on the fact that only one node has been added.
         updateDependencies();
     }
 }
 
 void Scene::updateDependencies() {
-    // TODO: actually update the deps.
-
+    sortTopologically();
 }
 
 void Scene::sortTopologically() {
+    ghoul_assert(_nodes.size() == _nodesByName.size(), "Number of scene graph nodes is inconsistent");
+    if (_nodes.empty())
+        return;
 
+    // Only the Root node can have an in-degree of 0
+    SceneGraphNode* root = _nodesByName[SceneGraphNode::RootNodeName];
+    if (!root) {
+        throw Scene::InvalidSceneError("No root node found");
+    }
+
+    std::stack<SceneGraphNode*> zeroInDegreeNodes;
+    zeroInDegreeNodes.push(root);
+
+    std::unordered_map<SceneGraphNode*, size_t> inDegrees;
+    for (SceneGraphNode* node : _nodes) {
+        size_t inDeg = node->dependencies().size();
+        if (node->parent() != nullptr) {
+            inDeg++;
+        }
+        inDegrees[node] = inDeg;
+    }
+    
+    std::vector<SceneGraphNode*> nodes;
+    nodes.reserve(_nodes.size());
+    while (!zeroInDegreeNodes.empty()) {
+        SceneGraphNode* node = zeroInDegreeNodes.top();
+
+        nodes.push_back(node);
+        zeroInDegreeNodes.pop();
+
+        for (auto& n : node->dependentNodes()) {
+            inDegrees[n] -= 1;
+            if (inDegrees[n] == 0)
+                zeroInDegreeNodes.push(n);
+        }
+        for (auto& n : node->children()) {
+            inDegrees[n] -= 1;
+            if (inDegrees[n] == 0)
+                zeroInDegreeNodes.push(n);
+        }
+    }
+    if (nodes.size() != _nodes.size()) {
+        throw Scene::InvalidSceneError("Circular dependency");
+    }
+
+    _nodes = nodes;
 }
 
 void Scene::update(const UpdateData& data) {
