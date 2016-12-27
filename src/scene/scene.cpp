@@ -99,6 +99,9 @@ bool Scene::deinitialize() {
 }
 
 void Scene::setRoot(std::unique_ptr<SceneGraphNode> root) {
+    if (_root) {
+        removeNode(_root.get());
+    }
     _root = std::move(root);
     addNode(_root.get());
 }
@@ -107,6 +110,7 @@ void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) 
     // Add the node and all its children.
     node->traversePreOrder([this](SceneGraphNode* n) {
         _nodes.push_back(n);
+        _nodesByName[n->name()] = n;
     });
     
     if (updateDeps) {
@@ -121,6 +125,7 @@ void Scene::removeNode(SceneGraphNode* node, Scene::UpdateDependencies updateDep
     // Remove the node and all its children.
     node->traversePostOrder([this](SceneGraphNode* n) {
         std::remove(_nodes.begin(), _nodes.end(), n);
+        _nodesByName.erase(n->name());
     });
     
     if (updateDeps) {

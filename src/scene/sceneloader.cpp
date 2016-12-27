@@ -120,8 +120,16 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     OsEng.scriptEngine().initializeLuaState(state);
 
     std::string absScenePath = absoluteScenePath(path);
+    ghoul::filesystem::File sceneFile(absScenePath);
+    std::string sceneDirectory = sceneFile.directoryName();
+
     ghoul::Dictionary sceneDictionary = loadSceneDictionary(absScenePath, state);
-    std::string modulesPath = absoluteModulesPath(absScenePath, sceneDictionary);
+
+    std::string relativeSceneDirectory = ".";
+    sceneDictionary.getValue<std::string>(KeyPathScene, relativeSceneDirectory);
+
+    std::string modulesPath = FileSys.absPath(sceneDirectory + FileSys.PathSeparator + relativeSceneDirectory);
+
     ghoul::Dictionary moduleDictionary;
 
     documentation::testSpecificationAndThrow(Scene::Documentation(), sceneDictionary, "Scene");
@@ -295,6 +303,7 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadModule(co
         ghoul::lua::loadDictionaryFromFile(path, moduleDictionary, luaState);
     } catch (ghoul::lua::LuaRuntimeException e) {
         LERRORC(e.component, e.message);
+        return std::vector<std::unique_ptr<SceneLoader::LoadedNode>>();
     }
 
     std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadedNodes;
@@ -343,19 +352,6 @@ std::string SceneLoader::absoluteScenePath(const std::string& path) {
 
 }
 
-
-std::string SceneLoader::absoluteModulesPath(const std::string& path, const ghoul::Dictionary sceneDictionary) {
-    std::string sceneDescriptionDirectory = ghoul::filesystem::File(
-        path,
-        ghoul::filesystem::File::RawPath::Yes
-        ).directoryName();
-
-    std::string sceneDirectory(".");
-    sceneDictionary.getValue(KeyPathScene, sceneDirectory);
-    return sceneDirectory;
-}
-
-
 ghoul::Dictionary SceneLoader::loadSceneDictionary(const std::string& path, lua_State* state) {
     // Load dictionary
     ghoul::Dictionary sceneDictionary;
@@ -402,8 +398,10 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
             dependencies.push_back(dep);
         }
 
+        SceneGraphNode* child = loadedNode->node.get();
+
         parent->attachChild(std::move(loadedNode->node), SceneGraphNode::UpdateScene::No);
-        loadedNode->node->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
+        child->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
 
         //parent->addChild(loadedNode->node.get());
 

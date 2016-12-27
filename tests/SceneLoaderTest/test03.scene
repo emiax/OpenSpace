@@ -1,9 +1,10 @@
--- Loading a module with a dependency on the common module
+-- Multiple Dependencies
 return {
     ScenePath = ".",
-    CommonFolder = "common",
     Modules = {
-        "common-dependency"
+        "multiple-dependencies",
+        "no-dependency",
+        "direct-dependency"
     }
 }
 

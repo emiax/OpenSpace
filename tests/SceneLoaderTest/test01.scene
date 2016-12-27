@@ -1,8 +1,8 @@
--- Loading an empty module dictionary 
+-- Loading a module without dependencies
 return {
     ScenePath = ".",
-    CommonFolder = "common",
     Modules = {
+        "no-dependency"
     }
 }
 

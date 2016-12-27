@@ -40,7 +40,12 @@ class Scene;
 class SceneLoader {
 public:
     struct LoadedNode {
-        LoadedNode(const std::string& nodeName, const std::string& parentName, const std::vector<std::string>& deps, std::unique_ptr<SceneGraphNode> n) {
+        LoadedNode(
+            const std::string& nodeName,
+            const std::string& parentName,
+            const std::vector<std::string>& deps,
+            std::unique_ptr<SceneGraphNode> n)
+        {
             name = nodeName;
             parent = parentName;
             dependencies = deps;
@@ -74,7 +79,6 @@ public:
 private:
     ghoul::Dictionary loadSceneDictionary(const std::string& path, lua_State* state);
     std::string absoluteScenePath(const std::string& path);
-    std::string absoluteModulesPath(const std::string& path, const ghoul::Dictionary sceneDictionary);
 };
 
 }
