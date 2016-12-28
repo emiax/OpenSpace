@@ -508,10 +508,6 @@ bool OpenSpaceEngine::initialize() {
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);
 
-    scene->initialize();
-
-    _interactionHandler->setCamera(scene->camera());
-
     // Run start up scripts
     try {
         runPreInitializationScripts(scenePath);
@@ -520,7 +516,51 @@ bool OpenSpaceEngine::initialize() {
         LFATALC(e.component, e.message);
     }
 
+    scene->initialize();
+    _interactionHandler->setCamera(scene->camera());
+    
     runPostInitializationScripts(scenePath);
+
+
+    // Write keyboard documentation.
+    const std::string KeyboardShortcutsType =
+        ConfigurationManager::KeyKeyboardShortcuts + "." +
+        ConfigurationManager::PartType;
+
+    const std::string KeyboardShortcutsFile =
+        ConfigurationManager::KeyKeyboardShortcuts + "." +
+        ConfigurationManager::PartFile;
+
+    std::string type, file;
+    bool hasType = configurationManager().getValue(KeyboardShortcutsType, type);
+    bool hasFile = configurationManager().getValue(KeyboardShortcutsFile, file);
+
+    if (hasType && hasFile) {
+        interactionHandler().writeKeyboardDocumentation(type, file);
+    }
+
+    // If a PropertyDocumentationFile was specified, generate it now.
+    const std::string KeyPropertyDocumentationType =
+        ConfigurationManager::KeyPropertyDocumentation + '.' +
+        ConfigurationManager::PartType;
+
+    const std::string KeyPropertyDocumentationFile =
+        ConfigurationManager::KeyPropertyDocumentation + '.' +
+        ConfigurationManager::PartFile;
+
+    hasType = configurationManager().hasKey(KeyPropertyDocumentationType);
+    hasFile = configurationManager().hasKey(KeyPropertyDocumentationFile);
+
+    if (hasType && hasFile) {
+        std::string propertyDocumentationType;
+        OsEng.configurationManager().getValue(KeyPropertyDocumentationType, propertyDocumentationType);
+        std::string propertyDocumentationFile;
+        OsEng.configurationManager().getValue(KeyPropertyDocumentationFile, propertyDocumentationFile);
+
+        propertyDocumentationFile = absPath(propertyDocumentationFile);
+        scene->writePropertyDocumentation(propertyDocumentationFile, propertyDocumentationType, scenePath);
+    }
+
 
 #ifdef OPENSPACE_MODULE_ONSCREENGUI_ENABLED
     LINFO("Initializing GUI");

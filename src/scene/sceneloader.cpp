@@ -67,51 +67,6 @@ struct ModuleInformation {
 
 namespace openspace {
 
-/*
-Documentation SceneLoader::Documentation() {
-    using namespace openspace::documentation;
-
-    return {
-        "Scene",
-        "scene",
-        {
-        {
-            KeyPathScene,
-            new StringAnnotationVerifier("A relative or absolute path"),
-            "The path to the directory where referenced modules are located",
-            Optional::Yes
-        },
-        {
-            KeyCamera,
-            new TableVerifier({
-                {
-                    KeyCameraFocus,
-                    new StringAnnotationVerifier("A name of a scene graph node"),
-                    "The scene graph node to which the camera position is relatively described",
-                    Optional::No
-                },
-                {
-                    KeyCameraPosition,
-                    new Vector3Verifier<double>(),
-                    "The camera position",
-                    Optional::No
-                }
-            }),
-            "Information about the camera",
-            Optional::No
-        },
-        {
-            KeyModules,
-            new StringListVerifier("Module directories"),
-            "List of modules to include",
-            Optional::No
-        }
-        }
-    };
-
-}*/
-
-
 std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     // Set up lua state.
     lua_State* state = ghoul::lua::createNewLuaState();
@@ -121,11 +76,16 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     );
     OsEng.scriptEngine().initializeLuaState(state);
 
-    std::string absScenePath = absoluteScenePath(path);
+    std::string absScenePath = absPath(path);
     ghoul::filesystem::File sceneFile(absScenePath);
     std::string sceneDirectory = sceneFile.directoryName();
 
-    ghoul::Dictionary sceneDictionary = loadSceneDictionary(absScenePath, state);
+    ghoul::Dictionary sceneDictionary;
+    if (!FileSys.fileExists(path)) {
+        throw ghoul::FileNotFoundError(path);
+    }
+    ghoul::lua::loadDictionaryFromFile(path, sceneDictionary, state);
+
     documentation::testSpecificationAndThrow(Scene::Documentation(), sceneDictionary, "Scene");
 
     std::string relativeSceneDirectory = ".";
@@ -177,91 +137,28 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     scene->setCamera(std::move(loadedCamera->camera));
 
     return std::move(scene);
+}
 
-    // Reset the InteractionManager to Orbital/default mode
-    // TODO: Decide if it belongs in the scene and/or how it gets reloaded
-    //OsEng.interactionHandler().setInteractionMode("Orbital");
+void SceneLoader::importDirectory(Scene& scene, const std::string& path) {
+    lua_State* state = ghoul::lua::createNewLuaState();
+    OnExit(
+        // Delete the Lua state at the end of the scope, no matter what
+        [state]() {ghoul::lua::destroyLuaState(state); }
+    );
+    OsEng.scriptEngine().initializeLuaState(state);
 
-    // After loading the scene, the keyboard bindings have been set
-    /*
-    const std::string KeyboardShortcutsType =
-        ConfigurationManager::KeyKeyboardShortcuts + "." +
-        ConfigurationManager::PartType;
+    std::string absDirectoryPath = absPath(path);
 
-    const std::string KeyboardShortcutsFile =
-        ConfigurationManager::KeyKeyboardShortcuts + "." +
-        ConfigurationManager::PartFile;
-
-
-            std::string type;
-            std::string file;
-            bool hasType = OsEng.configurationManager().getValue(
-                KeyboardShortcutsType, type
-                );
-
-            bool hasFile = OsEng.configurationManager().getValue(
-                KeyboardShortcutsFile, file
-                );
-
-            if (hasType && hasFile) {
-                OsEng.interactionHandler().writeKeyboardDocumentation(type, file);
-            }
-
-            LINFO("Loaded " << _sceneGraphToLoad);
-            _sceneGraphToLoad = "";
-        }
-        catch (const ghoul::RuntimeError& e) {
-            LERROR(e.what());
-            _sceneGraphToLoad = "";
-            return;
-        }
-    }
-    */
-
-    /*
-    
-    _camera = std::make_unique<Camera>();
-    OsEng.renderEngine().setCamera(_camera.get());
-    OsEng.interactionHandler().setCamera(_camera.get());
-
-    // Read the camera dictionary and set the camera state
-    ghoul::Dictionary cameraDictionary;
-    if (dictionary.getValue(KeyCamera, cameraDictionary)) {
-        OsEng.interactionHandler().setCameraStateFromDictionary(cameraDictionary);
-    }
-
-    // If a PropertyDocumentationFile was specified, generate it now
-    const std::string KeyPropertyDocumentationType =
-        ConfigurationManager::KeyPropertyDocumentation + '.' +
-        ConfigurationManager::PartType;
-
-    const std::string KeyPropertyDocumentationFile =
-        ConfigurationManager::KeyPropertyDocumentation + '.' +
-        ConfigurationManager::PartFile;
-
-    const bool hasType = OsEng.configurationManager().hasKey(KeyPropertyDocumentationType);
-    const bool hasFile = OsEng.configurationManager().hasKey(KeyPropertyDocumentationFile);
-    if (hasType && hasFile) {
-        std::string propertyDocumentationType;
-        OsEng.configurationManager().getValue(KeyPropertyDocumentationType, propertyDocumentationType);
-        std::string propertyDocumentationFile;
-        OsEng.configurationManager().getValue(KeyPropertyDocumentationFile, propertyDocumentationFile);
-
-        propertyDocumentationFile = absPath(propertyDocumentationFile);
-        writePropertyDocumentation(propertyDocumentationFile, propertyDocumentationType, sceneDescriptionFilePath);
-    }
-
-
-    OsEng.runPostInitializationScripts(sceneDescriptionFilePath);
-
-    */
+    ghoul::filesystem::Directory oldDirectory = FileSys.currentDirectory();
+    std::vector<std::unique_ptr<SceneLoader::LoadedNode>> nodes = loadDirectory(path, state);
+    FileSys.setCurrentDirectory(oldDirectory);
+    addLoadedNodes(scene, nodes);
 }
 
 std::unique_ptr<SceneLoader::LoadedCamera> SceneLoader::loadCamera(const ghoul::Dictionary& cameraDict) {
     std::string focus;
     glm::vec3 cameraPosition;
     glm::vec4 cameraRotation;
-
 
     bool readSuccessful = true;
     readSuccessful &= cameraDict.getValue(KeyCameraFocus, focus);
@@ -281,7 +178,6 @@ std::unique_ptr<SceneLoader::LoadedCamera> SceneLoader::loadCamera(const ghoul::
             "Position, Rotation and Focus need to be defined for camera dictionary.");
     }
     
-    //setFocusNode(node);
     return std::move(loadedCamera);
 }
 
@@ -299,7 +195,8 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadDirectory
     std::string moduleFile = FileSys.pathByAppendingComponent(path, moduleName) + ModuleExtension;
 
     if (FileSys.fileExists(moduleFile)) {
-        // Todo: get rid of changing the working directory (global state is bad)
+        // TODO: Get rid of changing the working directory (global state is bad) -- emiax
+        // This requires refactoring all renderables to not use relative paths in constructors.
         FileSys.setCurrentDirectory(ghoul::filesystem::Directory(path));
         
         // We have a module file, so it is a direct include.
@@ -366,51 +263,6 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadModule(co
     return loadedNodes;
 };
 
-
-std::string SceneLoader::absoluteScenePath(const std::string& path) {
-    std::string absScenePath = absPath(path);
-
-    /*
-    // See if scene file exists
-    using RawPath = ghoul::filesystem::FileSystem::RawPath;
-    if (!FileSys.fileExists(absScenePath, RawPath::Yes)) {
-        LERROR("Could not load scene file '" << absScenePath << "'. " <<
-            "File not found");
-        return false;
-    }
-    LINFO("Loading scene from file '" << absScenePath << "'");
-
-    // The scene path could either be an absolute or relative path to the description
-    // paths directory
-    std::string relativeCandidate = modulesPath +
-        ghoul::filesystem::FileSystem::PathSeparator + sceneDirectory;
-    std::string absoluteCandidate = abscPath(sceneDirectory);
-
-    if (FileSys.directoryExists(relativeCandidate))
-        sceneDirectory = relativeCandidate;
-    else if (FileSys.directoryExists(absoluteCandidate))
-        sceneDirectory = absoluteCandidate;
-    else {
-        LERROR("The '" << KeyPathScene << "' pointed to a "
-            "path '" << sceneDirectory << "' that did not exist");
-        return false;
-    }*/
-
-    return absScenePath;
-
-}
-
-ghoul::Dictionary SceneLoader::loadSceneDictionary(const std::string& path, lua_State* state) {
-    // Load dictionary
-    ghoul::Dictionary sceneDictionary;
-    if (!FileSys.fileExists(path)) {
-        throw ghoul::FileNotFoundError(path);
-    }
-    ghoul::lua::loadDictionaryFromFile(path, sceneDictionary, state);
-    return sceneDictionary;
-}
-
-
 void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& loadedNodes) {
     std::map<std::string, SceneGraphNode*> existingNodes = scene.nodesByName();
     std::map<std::string, SceneGraphNode*> addedNodes;
@@ -451,11 +303,10 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         std::vector<std::string> dependencyNames = loadedNode->dependencies;
 
         SceneGraphNode* parent = findNode(parentName);
-
         if (!parent) {
             throw Scene::InvalidSceneError("Could not find parent '" + parentName + "' for '" + loadedNode->name + "'");
         }
-        
+
         std::vector<SceneGraphNode*> dependencies;
         for (const auto& depName : dependencyNames) {
             SceneGraphNode* dep = findNode(depName);
@@ -466,17 +317,16 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         }
 
         SceneGraphNode* child = loadedNode->node.get();
-
         parent->attachChild(std::move(loadedNode->node), SceneGraphNode::UpdateScene::No);
         child->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
     }
 
-    
     // Add the nodes to the scene and update dependencies.
     for (auto& node : attachedBranches) {
         scene.addNode(node, Scene::UpdateDependencies::No);
     }
 
+    // Warn for nodes that lack of connection to root
     for (auto& p : addedNodes) {
         SceneGraphNode* node = p.second;
         if (!node->scene()) {

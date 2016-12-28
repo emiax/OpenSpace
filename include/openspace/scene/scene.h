@@ -128,6 +128,8 @@ public:
 
     const std::map<std::string, SceneGraphNode*>& nodesByName() const;
 
+    void writePropertyDocumentation(const std::string& filename, const std::string& type, const std::string& sceneFilename);
+
     /**
      * Returns the Lua library that contains all Lua functions available to change the
      * scene graph. The functions contained are
@@ -140,10 +142,7 @@ public:
 
     static documentation::Documentation Documentation();
 
-private:
-    void writePropertyDocumentation(const std::string& filename, const std::string& type, const std::string& sceneFilename);
-    
-    // actual scenegraph
+private:  
     std::unique_ptr<SceneGraphNode> _root;
     std::unique_ptr<Camera> _camera;
     std::vector<SceneGraphNode*> _nodes;

@@ -77,24 +77,17 @@ public:
     
     // storage -> scene
     std::unique_ptr<Scene> loadScene(const std::string& path);
-    
-    // dictionary -> loaded
-    std::unique_ptr<SceneLoader::LoadedNode> loadNode(const ghoul::Dictionary& dictionary);
-    std::unique_ptr<SceneLoader::LoadedCamera> loadCamera(const ghoul::Dictionary& dictionary);
-    
+    void importDirectory(Scene& scene, const std::string& directory);
 
-    // storage -> loaded
+private:
+    std::unique_ptr<SceneLoader::LoadedNode> loadNode(const ghoul::Dictionary& dictionary);
     std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadModule(const std::string& path, lua_State* luaState);
     std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadDirectory(const std::string& path, lua_State* luaState);
 
+    std::unique_ptr<SceneLoader::LoadedCamera> loadCamera(const ghoul::Dictionary& dictionary);
+
     // loaded -> scene
     void addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& nodes);
-    
-
-    //static openspace::Documentation Documentation();
-private:
-    ghoul::Dictionary loadSceneDictionary(const std::string& path, lua_State* state);
-    std::string absoluteScenePath(const std::string& path);
 };
 
 }
