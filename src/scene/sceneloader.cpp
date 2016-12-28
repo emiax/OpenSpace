@@ -366,7 +366,7 @@ ghoul::Dictionary SceneLoader::loadSceneDictionary(const std::string& path, lua_
 void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& loadedNodes) {
     std::map<std::string, SceneGraphNode*> existingNodes = scene.nodesByName();
     std::map<std::string, SceneGraphNode*> addedNodes;
-    std::vector<SceneGraphNode*> addedBranches;
+    std::vector<SceneGraphNode*> attachedBranches;
 
     // Extend the map from name to nodes with all the new contents.
     for (auto& loadedNode : loadedNodes) {
@@ -382,7 +382,7 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         addedNodes[name] = node;
 
         if (existingNodes.count(loadedNode->parent) == 1) {
-            addedBranches.push_back(node);
+            attachedBranches.push_back(node);
         }
     }
     
@@ -423,8 +423,9 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         child->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
     }
 
+    
     // Add the nodes to the scene and update dependencies.
-    for (auto& node : addedBranches) {
+    for (auto& node : attachedBranches) {
         scene.addNode(node, Scene::UpdateDependencies::No);
     }
 
@@ -438,11 +439,11 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
     try {
         scene.updateDependencies();
     } catch (Scene::InvalidSceneError e) {
-        //for (SceneGraphNode* addedBranch : addedBranches) {
+        for (SceneGraphNode* attachedBranch : attachedBranches) {
             // Reset the scene to the previous state.
-            //addedBranch->parent()->detachChild(*addedBranch);
-            //scene.removeNode(addedBranch, Scene::UpdateDependencies::No);
-        //}
+            scene.removeNode(attachedBranch, Scene::UpdateDependencies::No);
+            attachedBranch->parent()->detachChild(*attachedBranch, SceneGraphNode::UpdateScene::No);
+        }
         throw e;
     }
 }

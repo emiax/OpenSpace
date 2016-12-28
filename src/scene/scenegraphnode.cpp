@@ -207,7 +207,7 @@ void SceneGraphNode::traversePreOrder(std::function<void(SceneGraphNode*)> fn) {
 
 void SceneGraphNode::traversePostOrder(std::function<void(SceneGraphNode*)> fn) {
     for (auto& child : _children) {
-        child->traversePreOrder(fn);
+        child->traversePostOrder(fn);
     }
     fn(this);
 }
@@ -411,8 +411,8 @@ void SceneGraphNode::attachChild(std::unique_ptr<SceneGraphNode> child, UpdateSc
 }
 
 std::unique_ptr<SceneGraphNode> SceneGraphNode::detachChild(SceneGraphNode& child, UpdateScene updateScene) {
-    ghoul_assert(_dependentNodes.empty(), "Nodes cannot depend on a node benig detached");
-    ghoul_assert(_parent != nullptr, "Node must be attached to a parent");
+    ghoul_assert(child._dependentNodes.empty(), "Nodes cannot depend on a node being detached");
+    ghoul_assert(child._parent != nullptr, "Node must be attached to a parent");
     
     // Update of deps is deffered to the removal of the node from the scene
     clearDependencies(UpdateScene::No);
