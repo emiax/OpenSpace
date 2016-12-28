@@ -22,8 +22,6 @@
 * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
 ****************************************************************************************/
 
-
-
 #include <openspace/engine/openspaceengine.h>
 #include <openspace/scene/sceneloader.h>
 #include <openspace/scene/scene.h>
@@ -34,7 +32,6 @@
 #include <ghoul/filesystem/file.h>
 #include <ghoul/logging/logmanager.h>
 #include <ghoul/misc/onscopeexit.h>
-
 
 #include <memory>
 
@@ -53,9 +50,7 @@ namespace {
     const std::string KeyCameraFocus = "Focus";
     const std::string KeyCameraPosition = "Position";
     const std::string KeyCameraRotation = "Rotation";
-
 }
-
 
 struct ModuleInformation {
     ghoul::Dictionary dictionary;
@@ -64,14 +59,13 @@ struct ModuleInformation {
     std::string moduleName;
 };
 
-
 namespace openspace {
 
 std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     // Set up lua state.
     lua_State* state = ghoul::lua::createNewLuaState();
     OnExit(
-        // Delete the Lua state at the end of the scope, no matter what
+        // Delete the Lua state at the end of the scope, no matter what.
         [state]() {ghoul::lua::destroyLuaState(state); }
     );
     OsEng.scriptEngine().initializeLuaState(state);
@@ -98,7 +92,7 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     // Above we generated a ghoul::Dictionary from the scene file; now we run the scene
     // file again to load any variables defined inside into the state that is passed to
     // the modules. This allows us to specify global variables that can then be used
-    // inside the modules to toggle settings
+    // inside the modules to toggle settings.
     ghoul::lua::runScriptFile(state, absScenePath);
     std::vector<std::string> keys = moduleDictionary.keys();
     ghoul::filesystem::Directory oldDirectory = FileSys.currentDirectory();
@@ -142,7 +136,7 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
 void SceneLoader::importDirectory(Scene& scene, const std::string& path) {
     lua_State* state = ghoul::lua::createNewLuaState();
     OnExit(
-        // Delete the Lua state at the end of the scope, no matter what
+        // Delete the Lua state at the end of the scope, no matter what.
         [state]() {ghoul::lua::destroyLuaState(state); }
     );
     OsEng.scriptEngine().initializeLuaState(state);
@@ -203,7 +197,7 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadDirectory
         return loadModule(moduleFile, luaState);
     } else {
         std::vector<std::unique_ptr<SceneLoader::LoadedNode>> allLoadedNodes;
-        // If we do not have a module file, we have to include all subdirectories
+        // If we do not have a module file, we have to include all subdirectories.
         using ghoul::filesystem::Directory;
         using std::string;
         std::vector<string> directories = Directory(path).readDirectories();
@@ -268,7 +262,9 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
     std::map<std::string, SceneGraphNode*> addedNodes;
     std::vector<SceneGraphNode*> attachedBranches;
 
-    // Extend the map from name to nodes with all the new contents.
+    // Populate map of nodes to be added.
+    // Also track new branches of nodes that are attached
+    // to allow for recovery in case an invalid scene is generated.
     for (auto& loadedNode : loadedNodes) {
         std::string name = loadedNode->name;
         if (existingNodes.count(name) > 0) {
@@ -286,6 +282,7 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         }
     }
     
+    // Find a node by name among the exising nodes and the added nodes.
     auto findNode = [&existingNodes, &addedNodes](const std::string name) {
         std::map<std::string, SceneGraphNode*>::iterator it;
         if ((it = existingNodes.find(name)) != existingNodes.end()) {
@@ -297,7 +294,7 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         return static_cast<SceneGraphNode*>(nullptr);
     };
 
-    // Attach nodes to each other and set up dependencies.
+    // Attach each node to its parent and set up dependencies.
     for (auto& loadedNode : loadedNodes) {
         std::string parentName = loadedNode->parent;
         std::vector<std::string> dependencyNames = loadedNode->dependencies;
@@ -321,12 +318,12 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         child->setDependencies(dependencies, SceneGraphNode::UpdateScene::No);
     }
 
-    // Add the nodes to the scene and update dependencies.
+    // Add the nodes to the scene.
     for (auto& node : attachedBranches) {
         scene.addNode(node, Scene::UpdateDependencies::No);
     }
 
-    // Warn for nodes that lack of connection to root
+    // Warn for nodes that lack connection to the root.
     for (auto& p : addedNodes) {
         SceneGraphNode* node = p.second;
         if (!node->scene()) {
@@ -334,9 +331,11 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         }
     }
 
+    // Try to update dependencies.
+    // If the scene is invalid, an InavlidSceneError is thrown and the scene will be recovered to its previous state.
     try {
         scene.updateDependencies();
-    } catch (Scene::InvalidSceneError e) {
+    } catch (Scene::InvalidSceneError& e) {
         for (SceneGraphNode* attachedBranch : attachedBranches) {
             // Reset the scene to the previous state.
             scene.removeNode(attachedBranch, Scene::UpdateDependencies::No);
