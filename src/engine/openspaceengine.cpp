@@ -121,15 +121,16 @@ namespace {
 namespace openspace {
 
 namespace properties {
-    class Property;
+class Property;
 }
 
 class Scene;
-    
+
 OpenSpaceEngine* OpenSpaceEngine::_engine = nullptr;
 
-OpenSpaceEngine::OpenSpaceEngine(std::string programName,
-                                 std::unique_ptr<WindowWrapper> windowWrapper)
+OpenSpaceEngine::OpenSpaceEngine(
+    std::string programName,
+    std::unique_ptr<WindowWrapper> windowWrapper)
     : _configurationManager(new ConfigurationManager)
     , _interactionHandler(new interaction::InteractionHandler)
     , _renderEngine(new RenderEngine)
@@ -220,12 +221,12 @@ OpenSpaceEngine& OpenSpaceEngine::ref() {
 }
 
 bool OpenSpaceEngine::create(int argc, char** argv,
-                             std::unique_ptr<WindowWrapper> windowWrapper,
-                             std::vector<std::string>& sgctArguments)
+    std::unique_ptr<WindowWrapper> windowWrapper,
+    std::vector<std::string>& sgctArguments)
 {
     ghoul_assert(!_engine, "OpenSpaceEngine was already created");
     ghoul_assert(windowWrapper != nullptr, "No Window Wrapper was provided");
-    
+
     ghoul::initialize();
 
     // Initialize the LogManager and add the console log as this will be used every time
@@ -326,13 +327,13 @@ bool OpenSpaceEngine::create(int argc, char** argv,
             "${CACHE}",
             cacheFolder,
             ghoul::filesystem::FileSystem::Override::Yes
-        );
+            );
     }
 
     // Initialize the requested logs from the configuration file
     _engine->configureLogging();
 
-    LINFOC("OpenSpace Version", 
+    LINFOC("OpenSpace Version",
         OPENSPACE_VERSION_MAJOR << "." <<
         OPENSPACE_VERSION_MINOR << "." <<
         OPENSPACE_VERSION_PATCH << " (" << OPENSPACE_VERSION_STRING << ")");
@@ -491,15 +492,23 @@ bool OpenSpaceEngine::initialize() {
     // Load a light and a monospaced font
     loadFonts();
 
-    //_scene = std::make_unique<Scene>();
-    //_scene->initialize();
-    
     std::string scenePath = "";
     configurationManager().getValue(ConfigurationManager::KeyConfigScene, scenePath);
 
-    // Initialize the Scene
-    Scene* scene = _sceneManager->loadScene(scenePath);
+    loadScene(scenePath);
 
+
+    LINFO("Finished initializing");
+    return true;
+}
+
+
+void OpenSpaceEngine::loadScene(const std::string& scenePath) {
+    windowWrapper().setSynchronization(false);
+    OnExit(
+        [this]() { windowWrapper().setSynchronization(true); }
+    );
+    Scene* scene = _sceneManager->loadScene(scenePath);
 
     // Initialize the RenderEngine
     _renderEngine->setScene(scene);
@@ -518,9 +527,13 @@ bool OpenSpaceEngine::initialize() {
 
     scene->initialize();
     _interactionHandler->setCamera(scene->camera());
-    
-    runPostInitializationScripts(scenePath);
 
+    try {
+        runPostInitializationScripts(scenePath);
+    }
+    catch (const ghoul::RuntimeError& e) {
+        LFATALC(e.component, e.message);
+    }
 
     // Write keyboard documentation.
     const std::string KeyboardShortcutsType =
@@ -566,7 +579,7 @@ bool OpenSpaceEngine::initialize() {
     LINFO("Initializing GUI");
     _gui->initialize();
     _gui->_globalProperty.setSource(
-            [&]() {
+        [&]() {
             std::vector<properties::PropertyOwner*> res = {
                 _settingsEngine.get(),
                 _interactionHandler.get(),
@@ -600,14 +613,14 @@ bool OpenSpaceEngine::initialize() {
                 groups.end(),
                 std::back_inserter(res),
                 [](const auto& val) {
-                    return val.second.get(); 
+                    return val.second.get();
                 }
             );
             return res;
         }
     );
 #endif
-    
+
 #endif
 
 #ifdef OPENSPACE_MODULE_ISWA_ENABLED
@@ -617,9 +630,6 @@ bool OpenSpaceEngine::initialize() {
     _syncEngine->addSyncables(Time::ref().getSyncables());
     _syncEngine->addSyncables(_renderEngine->getSyncables());
     _syncEngine->addSyncable(_scriptEngine.get());
-
-    LINFO("Finished initializing");
-    return true;
 }
 
 

@@ -35,8 +35,6 @@
 #include <openspace/util/camera.h>
 #include <openspace/util/updatestructures.h>
 #include <openspace/scripting/scriptengine.h>
-#include <openspace/scene/scenegraph.h>
-
 #include <ghoul/opengl/programobject.h>
 #include <ghoul/misc/dictionary.h>
 

@@ -77,6 +77,7 @@ public:
     void setMaster(bool master);
     double runTime();
     void setRunTime(double t);
+    void loadScene(const std::string& scenePath);
 
     // Guaranteed to return a valid pointer
     ConfigurationManager& configurationManager();
