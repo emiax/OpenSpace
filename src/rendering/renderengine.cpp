@@ -462,7 +462,9 @@ void RenderEngine::setScene(Scene* scene) {
 
 void RenderEngine::setCamera(Camera* camera) {
     _camera = camera;
-    _renderer->setCamera(camera);
+    if (_renderer) {
+        _renderer->setCamera(camera);
+    }
 }
 
 Camera* RenderEngine::camera() const {

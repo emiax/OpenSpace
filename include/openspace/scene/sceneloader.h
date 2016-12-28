@@ -32,6 +32,7 @@
 #include <ghoul/lua/ghoul_lua.h>
 
 #include <openspace/scene/scenegraphnode.h>
+#include <openspace/util/camera.h>
 
 namespace openspace {
 
@@ -39,6 +40,7 @@ class Scene;
 
 class SceneLoader {
 public:
+
     struct LoadedNode {
         LoadedNode(
             const std::string& nodeName,
@@ -58,6 +60,18 @@ public:
         std::unique_ptr<SceneGraphNode> node;
     };
 
+    struct LoadedCamera {
+        LoadedCamera(
+            const std::string& parentName,
+            std::unique_ptr<Camera> c)
+        {
+            parent = parentName;
+            camera = std::move(c);
+        }
+        std::string parent;
+        std::unique_ptr<Camera> camera;
+    };
+
     SceneLoader() = default;
     ~SceneLoader() = default;
     
@@ -65,15 +79,17 @@ public:
     std::unique_ptr<Scene> loadScene(const std::string& path);
     
     // dictionary -> loaded
-    std::unique_ptr<SceneLoader::LoadedNode> loadNode(const ghoul::Dictionary& dictionary, lua_State* luaState);
+    std::unique_ptr<SceneLoader::LoadedNode> loadNode(const ghoul::Dictionary& dictionary);
+    std::unique_ptr<SceneLoader::LoadedCamera> loadCamera(const ghoul::Dictionary& dictionary);
     
+
     // storage -> loaded
     std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadModule(const std::string& path, lua_State* luaState);
     std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadDirectory(const std::string& path, lua_State* luaState);
 
     // loaded -> scene
-    std::unique_ptr<Scene> createSceneFromLoadedNodes(const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& nodes);
     void addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& nodes);
+    
 
     //static openspace::Documentation Documentation();
 private:

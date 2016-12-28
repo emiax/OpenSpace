@@ -84,21 +84,9 @@ namespace {
 
 namespace openspace {
 
-Scene::Scene() : _focus(SceneGraphNode::RootNodeName) {}
+Scene::Scene() {}
 
-Scene::~Scene() {
-    deinitialize();
-}
-
-bool Scene::initialize() {
-    LDEBUG("Initializing SceneGraph");
-    return true;
-}
-
-bool Scene::deinitialize() {
-    clear();
-    return true;
-}
+Scene::~Scene() {}
 
 void Scene::setRoot(std::unique_ptr<SceneGraphNode> root) {
     if (_root) {
@@ -107,6 +95,14 @@ void Scene::setRoot(std::unique_ptr<SceneGraphNode> root) {
     _root = std::move(root);
     _root->setScene(this);
     addNode(_root.get());
+}
+
+void Scene::setCamera(std::unique_ptr<Camera> camera) {
+    _camera = std::move(camera);
+}
+
+Camera* Scene::camera() const {
+    return _camera.get();
 }
 
 void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) {
@@ -153,11 +149,11 @@ void Scene::sortTopologically() {
 
     std::unordered_map<SceneGraphNode*, size_t> inDegrees;
     for (SceneGraphNode* node : _nodes) {
-        size_t inDeg = node->dependencies().size();
+        size_t inDegree = node->dependencies().size();
         if (node->parent() != nullptr) {
-            inDeg++;
+            inDegree++;
         }
-        inDegrees[node] = inDeg;
+        inDegrees[node] = inDegree;
     }
     
     std::vector<SceneGraphNode*> nodes;
@@ -186,29 +182,51 @@ void Scene::sortTopologically() {
     _nodes = nodes;
 }
 
+void Scene::initialize() {
+    for (SceneGraphNode* node : _nodes) {
+        try {
+            bool success = node->initialize();
+            if (success)
+                LDEBUG(node->name() << " initialized successfully!");
+            else
+                LWARNING(node->name() << " not initialized.");
+        }
+        catch (const ghoul::RuntimeError& e) {
+            LERRORC(_loggerCat + "(" + e.component + ")", e.what());
+        }
+    }
+}
+
 void Scene::update(const UpdateData& data) {
-    try {
-        _root->update(data);
-    } catch (const ghoul::RuntimeError& e) {
-        LERRORC(e.component, e.what());
+    for (auto& node : _nodes) {
+        try {
+            node->update(data);
+        }
+        catch (const ghoul::RuntimeError& e) {
+            LERRORC(e.component, e.what());
+        }
     }
 }
 
 void Scene::evaluate(Camera* camera) {
-    try {
-        _root->evaluate(camera);
-    }
-    catch (const ghoul::RuntimeError& e) {
-        LERRORC(e.component, e.what());
+    for (auto& node : _nodes) {
+        try {
+            node->evaluate(camera);
+        }
+        catch (const ghoul::RuntimeError& e) {
+            LERRORC(e.component, e.what());
+        }
     }
 }
 
 void Scene::render(const RenderData& data, RendererTasks& tasks) {
-    try {
-        _root->render(data, tasks);
-    }
-    catch (const ghoul::RuntimeError& e) {
-        LERRORC(e.component, e.what());
+    for (auto& node : _nodes) {
+        try {
+            node->render(data, tasks);
+        }
+        catch (const ghoul::RuntimeError& e) {
+            LERRORC(e.component, e.what());
+        }
     }
 }
 
@@ -330,7 +348,11 @@ SceneGraphNode* Scene::root() const {
 }
     
 SceneGraphNode* Scene::sceneGraphNode(const std::string& name) const {
-    return sceneGraphNode(name);
+    auto it = _nodesByName.find(name);
+    if (it != _nodesByName.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
 
 const std::vector<SceneGraphNode*>& Scene::allSceneGraphNodes() const {

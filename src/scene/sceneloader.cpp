@@ -52,6 +52,8 @@ namespace {
     const std::string KeyCamera = "Camera";
     const std::string KeyCameraFocus = "Focus";
     const std::string KeyCameraPosition = "Position";
+    const std::string KeyCameraRotation = "Rotation";
+
 }
 
 
@@ -124,18 +126,14 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     std::string sceneDirectory = sceneFile.directoryName();
 
     ghoul::Dictionary sceneDictionary = loadSceneDictionary(absScenePath, state);
+    documentation::testSpecificationAndThrow(Scene::Documentation(), sceneDictionary, "Scene");
 
     std::string relativeSceneDirectory = ".";
     sceneDictionary.getValue<std::string>(KeyPathScene, relativeSceneDirectory);
-
     std::string modulesPath = FileSys.absPath(sceneDirectory + FileSys.PathSeparator + relativeSceneDirectory);
 
     ghoul::Dictionary moduleDictionary;
-
-    documentation::testSpecificationAndThrow(Scene::Documentation(), sceneDictionary, "Scene");
-
     sceneDictionary.getValue(KeyModules, moduleDictionary);
-        
 
     // Above we generated a ghoul::Dictionary from the scene file; now we run the scene
     // file again to load any variables defined inside into the state that is passed to
@@ -157,7 +155,28 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     }
 
     FileSys.setCurrentDirectory(oldDirectory);
+    
+    std::unique_ptr<Scene> scene = std::make_unique<Scene>();
 
+    std::unique_ptr<SceneGraphNode> rootNode = std::make_unique<SceneGraphNode>();
+    rootNode->setName(SceneGraphNode::RootNodeName);
+    scene->setRoot(std::move(rootNode));
+
+    addLoadedNodes(*scene, allNodes);
+
+    ghoul::Dictionary cameraDictionary;
+    sceneDictionary.getValue(KeyCamera, cameraDictionary);
+    std::unique_ptr<LoadedCamera> loadedCamera = loadCamera(cameraDictionary);
+
+    auto& nodeMap = scene->nodesByName();
+    auto it = nodeMap.find(loadedCamera->parent);
+    if (it != nodeMap.end()) {
+        loadedCamera->camera->setParent(it->second);
+    }
+
+    scene->setCamera(std::move(loadedCamera->camera));
+
+    return std::move(scene);
 
     // Reset the InteractionManager to Orbital/default mode
     // TODO: Decide if it belongs in the scene and/or how it gets reloaded
@@ -236,8 +255,34 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     OsEng.runPostInitializationScripts(sceneDescriptionFilePath);
 
     */
+}
 
-    return createSceneFromLoadedNodes(allNodes);
+std::unique_ptr<SceneLoader::LoadedCamera> SceneLoader::loadCamera(const ghoul::Dictionary& cameraDict) {
+    std::string focus;
+    glm::vec3 cameraPosition;
+    glm::vec4 cameraRotation;
+
+
+    bool readSuccessful = true;
+    readSuccessful &= cameraDict.getValue(KeyCameraFocus, focus);
+    readSuccessful &= cameraDict.getValue(KeyCameraPosition, cameraPosition);
+    readSuccessful &= cameraDict.getValue(KeyCameraRotation, cameraRotation);
+
+    std::unique_ptr<Camera> camera = std::make_unique<Camera>();
+
+    camera->setPositionVec3(cameraPosition);
+    camera->setRotation(glm::dquat(
+        cameraRotation.x, cameraRotation.y, cameraRotation.z, cameraRotation.w));
+
+    std::unique_ptr<LoadedCamera> loadedCamera = std::make_unique<LoadedCamera>(focus, std::move(camera));
+    
+    if (!readSuccessful) {
+        throw Scene::InvalidSceneError(
+            "Position, Rotation and Focus need to be defined for camera dictionary.");
+    }
+    
+    //setFocusNode(node);
+    return std::move(loadedCamera);
 }
 
 
@@ -254,7 +299,10 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadDirectory
     std::string moduleFile = FileSys.pathByAppendingComponent(path, moduleName) + ModuleExtension;
 
     if (FileSys.fileExists(moduleFile)) {
-        // We have a module file, so it is a direct include
+        // Todo: get rid of changing the working directory (global state is bad)
+        FileSys.setCurrentDirectory(ghoul::filesystem::Directory(path));
+        
+        // We have a module file, so it is a direct include.
         return loadModule(moduleFile, luaState);
     } else {
         std::vector<std::unique_ptr<SceneLoader::LoadedNode>> allLoadedNodes;
@@ -273,7 +321,7 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadDirectory
 }
 
 
-std::unique_ptr<SceneLoader::LoadedNode> SceneLoader::loadNode(const ghoul::Dictionary& dictionary, lua_State* luaState) {
+std::unique_ptr<SceneLoader::LoadedNode> SceneLoader::loadNode(const ghoul::Dictionary& dictionary) {
     std::vector<std::string> dependencies;
 
     std::string nodeName = dictionary.value<std::string>(KeyName);
@@ -313,7 +361,7 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadModule(co
         if (!moduleDictionary.getValue(key, nodeDictionary)) {
             LERROR("Node dictionary did not have the corrent type");
         }
-        loadedNodes.push_back(loadNode(nodeDictionary, luaState));
+        loadedNodes.push_back(loadNode(nodeDictionary));
     }
     return loadedNodes;
 };
@@ -446,17 +494,6 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
         }
         throw e;
     }
-}
-
-std::unique_ptr<Scene> SceneLoader::createSceneFromLoadedNodes(const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& nodes) {
-    std::unique_ptr<Scene> scene = std::make_unique<Scene>();
-
-    std::unique_ptr<SceneGraphNode> rootNode = std::make_unique<SceneGraphNode>();
-    rootNode->setName(SceneGraphNode::RootNodeName);
-    scene->setRoot(std::move(rootNode));
-
-    addLoadedNodes(*scene, nodes);
-    return std::move(scene);
 }
 
 

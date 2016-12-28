@@ -491,7 +491,6 @@ bool OpenSpaceEngine::initialize() {
     // Load a light and a monospaced font
     loadFonts();
 
-
     //_scene = std::make_unique<Scene>();
     //_scene->initialize();
     
@@ -502,14 +501,16 @@ bool OpenSpaceEngine::initialize() {
     Scene* scene = _sceneManager->loadScene(scenePath);
 
 
-    //_scene->scheduleLoadSceneFile(scenePath);
-
-
     // Initialize the RenderEngine
     _renderEngine->setScene(scene);
+    _renderEngine->setCamera(scene->camera());
     _renderEngine->initialize();
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);
+
+    scene->initialize();
+
+    _interactionHandler->setCamera(scene->camera());
 
     // Run start up scripts
     try {
@@ -518,6 +519,8 @@ bool OpenSpaceEngine::initialize() {
     catch (const ghoul::RuntimeError& e) {
         LFATALC(e.component, e.message);
     }
+
+    runPostInitializationScripts(scenePath);
 
 #ifdef OPENSPACE_MODULE_ONSCREENGUI_ENABLED
     LINFO("Initializing GUI");

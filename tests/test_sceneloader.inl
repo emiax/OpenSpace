@@ -71,9 +71,15 @@ TEST(SceneLoaderTest, AbsoluteScenePath) {
 
     ghoul::DictionaryLuaFormatter formatter;
     ghoul::Dictionary sceneFileDictionary;
+    ghoul::Dictionary cameraDictionary;
+
+    cameraDictionary.setValue<glm::vec3>("Position", glm::vec3(0.0));
+    cameraDictionary.setValue<glm::vec4>("Rotation", glm::vec4(0.0));
+    cameraDictionary.setValue<std::string>("Focus", "Root");
 
     sceneFileDictionary.setValue<std::string>("ScenePath", absPath("${TESTDIR}/SceneLoaderTest/scene-folder"));
     sceneFileDictionary.setValue<ghoul::Dictionary>("Modules", ghoul::Dictionary());
+    sceneFileDictionary.setValue<ghoul::Dictionary>("Camera", cameraDictionary);
 
     sceneFile << "return " << formatter.format(sceneFileDictionary);
     sceneFile.close();
