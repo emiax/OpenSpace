@@ -88,9 +88,7 @@ public:
     Scene* scene();
     void updateScene();
 
-    void setCamera(Camera* camera);
     Camera* camera() const;
-
     Renderer* renderer() const;
     RendererImplementation rendererImplementation() const;
     RaycasterManager& raycasterManager();
@@ -159,7 +157,7 @@ public:
     /**
      * Set the camera to use for rendering
      */
-    void setCamera(const Camera* camera);
+    void setCamera(Camera* camera);
 
 
     void setRendererFromString(const std::string& method);

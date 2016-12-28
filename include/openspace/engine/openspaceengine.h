@@ -114,6 +114,7 @@ public:
     void externalControlCallback(const char* receivedChars, int size, int clientId);
     void encode();
     void decode();
+    void scheduleLoadScene(const std::string& scenePath);
 
     void enableBarrier();
     void disableBarrier();
@@ -168,6 +169,8 @@ private:
     // Others
     std::unique_ptr<properties::PropertyOwner> _globalPropertyNamespace;
     
+    std::string _sceneToLoad;
+
     bool _isMaster;
     double _runTime;
 

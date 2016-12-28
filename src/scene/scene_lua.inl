@@ -213,10 +213,8 @@ int loadScene(lua_State* L) {
     SCRIPT_CHECK_ARGUMENTS("loadScene", L, 1, nArguments);
 
     std::string sceneFile = luaL_checkstring(L, -1);
-
-    // todo: actually load the scene.
-//    OsEng.renderEngine().scene()->scheduleLoadSceneFile(sceneFile);
-
+    
+    OsEng.scheduleLoadScene(sceneFile);
     return 0;
 }
 

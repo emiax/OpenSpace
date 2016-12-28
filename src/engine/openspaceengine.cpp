@@ -495,25 +495,52 @@ bool OpenSpaceEngine::initialize() {
     std::string scenePath = "";
     configurationManager().getValue(ConfigurationManager::KeyConfigScene, scenePath);
 
-    loadScene(scenePath);
+    _renderEngine->initialize();
+    scheduleLoadScene(scenePath);
 
 
     LINFO("Finished initializing");
     return true;
 }
 
+void OpenSpaceEngine::scheduleLoadScene(const std::string& scenePath) {
+    _sceneToLoad = scenePath;
+}
 
 void OpenSpaceEngine::loadScene(const std::string& scenePath) {
     windowWrapper().setSynchronization(false);
     OnExit(
         [this]() { windowWrapper().setSynchronization(true); }
     );
-    Scene* scene = _sceneManager->loadScene(scenePath);
+    
+    Scene* scene;
+    try {
+        scene = _sceneManager->loadScene(scenePath);
+    } catch (const ghoul::FileNotFoundError& e) {
+        LERRORC(e.component, e.message);
+        return;
+    } catch (const Scene::InvalidSceneError& e) {
+        LERRORC(e.component, e.message);
+        return;
+    } catch (const ghoul::RuntimeError& e) {
+        LERRORC(e.component, e.message);
+        return;
+    }
+
+    Scene* previousScene = _renderEngine->scene();
+    if (previousScene) {
+        _syncEngine->removeSyncables(Time::ref().getSyncables());
+        _syncEngine->removeSyncables(_renderEngine->getSyncables());
+        _syncEngine->removeSyncable(_scriptEngine.get());
+
+        _renderEngine->setScene(nullptr);
+        _renderEngine->setCamera(nullptr);
+        _sceneManager->unloadScene(*previousScene);
+    }
 
     // Initialize the RenderEngine
     _renderEngine->setScene(scene);
     _renderEngine->setCamera(scene->camera());
-    _renderEngine->initialize();
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);
 
@@ -926,6 +953,11 @@ void OpenSpaceEngine::setRunTime(double d){
     
 void OpenSpaceEngine::preSynchronization() {
     FileSys.triggerFilesystemEvents();
+
+    if (_sceneToLoad != "") {
+        loadScene(_sceneToLoad);
+        _sceneToLoad = "";
+    }
 
     if (_isFirstRenderingFirstFrame) {
         _windowWrapper->setSynchronization(false);

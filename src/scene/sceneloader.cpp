@@ -240,7 +240,7 @@ std::vector<std::unique_ptr<SceneLoader::LoadedNode>> SceneLoader::loadModule(co
     ghoul::Dictionary moduleDictionary;
     try {
         ghoul::lua::loadDictionaryFromFile(path, moduleDictionary, luaState);
-    } catch (ghoul::lua::LuaRuntimeException e) {
+    } catch (const ghoul::lua::LuaRuntimeException& e) {
         LERRORC(e.component, e.message);
         return std::vector<std::unique_ptr<SceneLoader::LoadedNode>>();
     }
@@ -335,7 +335,7 @@ void SceneLoader::addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr
     // If the scene is invalid, an InavlidSceneError is thrown and the scene will be recovered to its previous state.
     try {
         scene.updateDependencies();
-    } catch (Scene::InvalidSceneError& e) {
+    } catch (const Scene::InvalidSceneError& e) {
         for (SceneGraphNode* attachedBranch : attachedBranches) {
             // Reset the scene to the previous state.
             scene.removeNode(attachedBranch, Scene::UpdateDependencies::No);

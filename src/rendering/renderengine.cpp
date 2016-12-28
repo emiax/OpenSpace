@@ -448,7 +448,6 @@ void RenderEngine::toggleInfoText(bool b) {
 }
 
 Scene* RenderEngine::scene() {
-    ghoul_assert(_scene, "Scenegraph not initialized");
     return _scene;
 }
 
@@ -458,6 +457,9 @@ RaycasterManager& RenderEngine::raycasterManager() {
 
 void RenderEngine::setScene(Scene* scene) {
     _scene = scene;
+    if (_renderer) {
+        _renderer->setScene(scene);
+    }
 }
 
 void RenderEngine::setCamera(Camera* camera) {
