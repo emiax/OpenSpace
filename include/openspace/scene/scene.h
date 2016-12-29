@@ -143,7 +143,8 @@ public:
 private:  
     std::unique_ptr<SceneGraphNode> _root;
     std::unique_ptr<Camera> _camera;
-    std::vector<SceneGraphNode*> _nodes;
+    std::vector<SceneGraphNode*> _topologicallySortedNodes;
+    std::vector<SceneGraphNode*> _circularNodes;
     std::map<std::string, SceneGraphNode*> _nodesByName;
 
     std::mutex _programUpdateLock;

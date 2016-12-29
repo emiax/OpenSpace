@@ -257,7 +257,11 @@ TEST(SceneLoaderTest, Test05) {
     const std::string file = absPath("${TESTDIR}/SceneLoaderTest/test05.scene");
 
     openspace::SceneLoader loader;
-    EXPECT_THROW(loader.loadScene(file), openspace::Scene::InvalidSceneError);
+    std::unique_ptr<openspace::Scene> scene = loader.loadScene(file);
+    std::vector<openspace::SceneGraphNode*> nodes = scene->allSceneGraphNodes();
+
+    EXPECT_EQ(nodes.size(), 1);
+    // TODO: Add more tests regarding circular deps.
 }
 
 

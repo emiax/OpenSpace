@@ -108,7 +108,7 @@ Camera* Scene::camera() const {
 void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) {
     // Add the node and all its children.
     node->traversePreOrder([this](SceneGraphNode* n) {
-        _nodes.push_back(n);
+        _topologicallySortedNodes.push_back(n);
         _nodesByName[n->name()] = n;
     });
     
@@ -120,7 +120,7 @@ void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) 
 void Scene::removeNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) {
     // Remove the node and all its children.
     node->traversePostOrder([this](SceneGraphNode* n) {
-        std::remove(_nodes.begin(), _nodes.end(), n);
+        std::remove(_topologicallySortedNodes.begin(), _topologicallySortedNodes.end(), n);
         _nodesByName.erase(n->name());
     });
     
@@ -134,8 +134,12 @@ void Scene::updateDependencies() {
 }
 
 void Scene::sortTopologically() {
-    ghoul_assert(_nodes.size() == _nodesByName.size(), "Number of scene graph nodes is inconsistent");
-    if (_nodes.empty())
+    std::copy(_circularNodes.begin(), _circularNodes.end(), std::back_inserter(_topologicallySortedNodes));
+    _circularNodes.clear();
+
+    ghoul_assert(_topologicallySortedNodes.size() == _nodesByName.size(), "Number of scene graph nodes is inconsistent");
+    
+    if (_topologicallySortedNodes.empty())
         return;
 
     // Only the Root node can have an in-degree of 0
@@ -144,46 +148,57 @@ void Scene::sortTopologically() {
         throw Scene::InvalidSceneError("No root node found");
     }
 
-    std::stack<SceneGraphNode*> zeroInDegreeNodes;
-    zeroInDegreeNodes.push(root);
+
 
     std::unordered_map<SceneGraphNode*, size_t> inDegrees;
-    for (SceneGraphNode* node : _nodes) {
+    for (SceneGraphNode* node : _topologicallySortedNodes) {
         size_t inDegree = node->dependencies().size();
         if (node->parent() != nullptr) {
             inDegree++;
+            inDegrees[node] = inDegree;
         }
-        inDegrees[node] = inDegree;
     }
+
+    std::stack<SceneGraphNode*> zeroInDegreeNodes;
+    zeroInDegreeNodes.push(root);
     
     std::vector<SceneGraphNode*> nodes;
-    nodes.reserve(_nodes.size());
+    nodes.reserve(_topologicallySortedNodes.size());
     while (!zeroInDegreeNodes.empty()) {
         SceneGraphNode* node = zeroInDegreeNodes.top();
-
         nodes.push_back(node);
         zeroInDegreeNodes.pop();
 
         for (auto& n : node->dependentNodes()) {
-            inDegrees[n] -= 1;
-            if (inDegrees[n] == 0)
+            auto it = inDegrees.find(n);
+            it->second -= 1;
+            if (it->second == 0) {
                 zeroInDegreeNodes.push(n);
+                inDegrees.erase(it);
+            }
         }
         for (auto& n : node->children()) {
-            inDegrees[n] -= 1;
-            if (inDegrees[n] == 0)
+            auto it = inDegrees.find(n);
+            it->second -= 1;
+            if (it->second == 0) {
                 zeroInDegreeNodes.push(n);
+                inDegrees.erase(it);
+            }
         }
     }
-    if (nodes.size() != _nodes.size()) {
-        throw Scene::InvalidSceneError("Circular dependency");
+    if (inDegrees.size() > 0) {
+        LERROR("The scene contains circular dependencies. " << inDegrees.size() << " nodes will be disabled.");
     }
 
-    _nodes = nodes;
+    for (auto& it : inDegrees) {
+        _circularNodes.push_back(it.first);
+    }
+    
+    _topologicallySortedNodes = nodes;
 }
 
 void Scene::initialize() {
-    for (SceneGraphNode* node : _nodes) {
+    for (SceneGraphNode* node : _topologicallySortedNodes) {
         try {
             bool success = node->initialize();
             if (success)
@@ -198,7 +213,7 @@ void Scene::initialize() {
 }
 
 void Scene::update(const UpdateData& data) {
-    for (auto& node : _nodes) {
+    for (auto& node : _topologicallySortedNodes) {
         try {
             node->update(data);
         }
@@ -209,7 +224,7 @@ void Scene::update(const UpdateData& data) {
 }
 
 void Scene::evaluate(Camera* camera) {
-    for (auto& node : _nodes) {
+    for (auto& node : _topologicallySortedNodes) {
         try {
             node->evaluate(camera);
         }
@@ -220,7 +235,7 @@ void Scene::evaluate(Camera* camera) {
 }
 
 void Scene::render(const RenderData& data, RendererTasks& tasks) {
-    for (auto& node : _nodes) {
+    for (auto& node : _topologicallySortedNodes) {
         try {
             node->render(data, tasks);
         }
@@ -356,7 +371,7 @@ SceneGraphNode* Scene::sceneGraphNode(const std::string& name) const {
 }
 
 const std::vector<SceneGraphNode*>& Scene::allSceneGraphNodes() const {
-    return _nodes;
+    return _topologicallySortedNodes;
 }
 
 void Scene::writePropertyDocumentation(const std::string& filename, const std::string& type, const std::string& sceneFilename) {

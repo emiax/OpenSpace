@@ -80,14 +80,14 @@ public:
     void importDirectory(Scene& scene, const std::string& directory);
 
 private:
-    std::unique_ptr<SceneLoader::LoadedNode> loadNode(const ghoul::Dictionary& dictionary);
-    std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadModule(const std::string& path, lua_State* luaState);
-    std::vector<std::unique_ptr<SceneLoader::LoadedNode>> loadDirectory(const std::string& path, lua_State* luaState);
+    SceneLoader::LoadedNode loadNode(const ghoul::Dictionary& dictionary);
+    std::vector<SceneLoader::LoadedNode> loadModule(const std::string& path, lua_State* luaState);
+    std::vector<SceneLoader::LoadedNode> loadDirectory(const std::string& path, lua_State* luaState);
 
-    std::unique_ptr<SceneLoader::LoadedCamera> loadCamera(const ghoul::Dictionary& dictionary);
+    SceneLoader::LoadedCamera loadCamera(const ghoul::Dictionary& dictionary);
 
     // loaded -> scene
-    void addLoadedNodes(Scene& scene, const std::vector<std::unique_ptr<SceneLoader::LoadedNode>>& nodes);
+    void addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> nodes);
 };
 
 }

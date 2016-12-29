@@ -513,6 +513,15 @@ void OpenSpaceEngine::loadScene(const std::string& scenePath) {
         [this]() { windowWrapper().setSynchronization(true); }
     );
     
+    // Run start up scripts
+    try {
+        runPreInitializationScripts(scenePath);
+    }
+    catch (const ghoul::RuntimeError& e) {
+        LFATALC(e.component, e.message);
+    }
+
+
     Scene* scene;
     try {
         scene = _sceneManager->loadScene(scenePath);
@@ -544,13 +553,6 @@ void OpenSpaceEngine::loadScene(const std::string& scenePath) {
     _renderEngine->setGlobalBlackOutFactor(0.0);
     _renderEngine->startFading(1, 3.0);
 
-    // Run start up scripts
-    try {
-        runPreInitializationScripts(scenePath);
-    }
-    catch (const ghoul::RuntimeError& e) {
-        LFATALC(e.component, e.message);
-    }
 
     scene->initialize();
     _interactionHandler->setCamera(scene->camera());
