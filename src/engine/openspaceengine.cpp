@@ -153,6 +153,8 @@ OpenSpaceEngine::OpenSpaceEngine(
     , _parallelConnection(new ParallelConnection)
     , _windowWrapper(std::move(windowWrapper))
     , _globalPropertyNamespace(new properties::PropertyOwner)
+    , _switchScene(false)
+    , _scenePath("")
     , _isMaster(false)
     , _runTime(0.0)
     , _isInShutdownMode(false)
@@ -498,13 +500,13 @@ bool OpenSpaceEngine::initialize() {
     _renderEngine->initialize();
     scheduleLoadScene(scenePath);
 
-
     LINFO("Finished initializing");
     return true;
 }
 
 void OpenSpaceEngine::scheduleLoadScene(const std::string& scenePath) {
-    _sceneToLoad = scenePath;
+    _switchScene = true;
+    _scenePath = scenePath;
 }
 
 void OpenSpaceEngine::loadScene(const std::string& scenePath) {
@@ -956,9 +958,9 @@ void OpenSpaceEngine::setRunTime(double d){
 void OpenSpaceEngine::preSynchronization() {
     FileSys.triggerFilesystemEvents();
 
-    if (_sceneToLoad != "") {
-        loadScene(_sceneToLoad);
-        _sceneToLoad = "";
+    if (_switchScene) {
+        loadScene(_scenePath);
+        _switchScene = false;
     }
 
     if (_isFirstRenderingFirstFrame) {

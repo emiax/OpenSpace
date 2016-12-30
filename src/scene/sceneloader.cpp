@@ -76,10 +76,10 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     std::string sceneDirectory = sceneFile.directoryName();
 
     ghoul::Dictionary sceneDictionary;
-    if (!FileSys.fileExists(path)) {
-        throw ghoul::FileNotFoundError(path);
+    if (!FileSys.fileExists(absScenePath)) {
+        throw ghoul::FileNotFoundError(absScenePath);
     }
-    ghoul::lua::loadDictionaryFromFile(path, sceneDictionary, state);
+    ghoul::lua::loadDictionaryFromFile(absScenePath, sceneDictionary, state);
 
     documentation::testSpecificationAndThrow(Scene::Documentation(), sceneDictionary, "Scene");
 

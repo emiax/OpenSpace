@@ -119,11 +119,6 @@ public:
     static documentation::Documentation Documentation();
 
 private:
-
-
-
-    //bool sphereInsideFrustum(const psc& s_pos, const PowerScaledScalar& s_rad, const Camera* camera);
-
     glm::dvec3 calculateWorldPosition() const;
     glm::dmat3 calculateWorldRotation() const;
     double calculateWorldScale() const;

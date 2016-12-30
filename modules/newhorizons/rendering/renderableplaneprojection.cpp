@@ -266,8 +266,7 @@ void RenderablePlaneProjection::updatePlane(const Image& img, double currentTime
         SceneGraphNode* thisNode = OsEng.renderEngine().scene()->sceneGraphNode(_name);
         SceneGraphNode* newParent = OsEng.renderEngine().scene()->sceneGraphNode(_target.node);
         if (thisNode != nullptr && newParent != nullptr) {
-            // TODO.
-            //thisNode->setParent(newParent);
+            thisNode->setParent(*newParent);
         }
             
     }

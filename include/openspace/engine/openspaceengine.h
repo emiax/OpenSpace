@@ -169,7 +169,8 @@ private:
     // Others
     std::unique_ptr<properties::PropertyOwner> _globalPropertyNamespace;
     
-    std::string _sceneToLoad;
+    bool _switchScene;
+    std::string _scenePath;
 
     bool _isMaster;
     double _runTime;

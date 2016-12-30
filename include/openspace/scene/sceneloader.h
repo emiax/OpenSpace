@@ -40,7 +40,6 @@ class Scene;
 
 class SceneLoader {
 public:
-
     struct LoadedNode {
         LoadedNode(
             const std::string& nodeName,
@@ -75,7 +74,6 @@ public:
     SceneLoader() = default;
     ~SceneLoader() = default;
     
-    // storage -> scene
     std::unique_ptr<Scene> loadScene(const std::string& path);
     void importDirectory(Scene& scene, const std::string& directory);
 
@@ -85,8 +83,6 @@ private:
     std::vector<SceneLoader::LoadedNode> loadDirectory(const std::string& path, lua_State* luaState);
 
     SceneLoader::LoadedCamera loadCamera(const ghoul::Dictionary& dictionary);
-
-    // loaded -> scene
     void addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> nodes);
 };
 
