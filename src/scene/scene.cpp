@@ -32,6 +32,7 @@
 #include <openspace/query/query.h>
 #include <openspace/rendering/renderengine.h>
 #include <openspace/scene/scenegraphnode.h>
+#include <openspace/scene/sceneloader.h>
 #include <openspace/scripting/scriptengine.h>
 #include <openspace/scripting/script_helper.h>
 #include <openspace/util/time.h>
@@ -120,7 +121,7 @@ void Scene::addNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) 
 void Scene::removeNode(SceneGraphNode* node, Scene::UpdateDependencies updateDeps) {
     // Remove the node and all its children.
     node->traversePostOrder([this](SceneGraphNode* n) {
-        std::remove(_topologicallySortedNodes.begin(), _topologicallySortedNodes.end(), n);
+        _topologicallySortedNodes.erase(std::remove(_topologicallySortedNodes.begin(), _topologicallySortedNodes.end(), n), _topologicallySortedNodes.end());
         _nodesByName.erase(n->name());
     });
     
@@ -467,6 +468,19 @@ scripting::LuaLibrary Scene::luaLibrary() {
                 "string",
                 "Loads the scene found at the file passed as an "
                 "argument. If a scene is already loaded, it is unloaded first"
+            },
+            {
+                "addSceneGraphNode",
+                &luascriptfunctions::addSceneGraphNode,
+                "table",
+                "Loads the SceneGraphNode described in the table and adds it to the "
+                "SceneGraph"
+            },
+            {
+                "removeSceneGraphNode",
+                &luascriptfunctions::removeSceneGraphNode,
+                "string",
+                "Removes the SceneGraphNode identified by name"
             }
         }
     };

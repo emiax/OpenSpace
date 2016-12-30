@@ -75,7 +75,8 @@ public:
     ~SceneLoader() = default;
     
     std::unique_ptr<Scene> loadScene(const std::string& path);
-    void importDirectory(Scene& scene, const std::string& directory);
+    std::vector<SceneGraphNode*> importDirectory(Scene& scene, const std::string& directory);
+    SceneGraphNode* importNodeDictionary(Scene& scene, const ghoul::Dictionary& dictionary);
 
 private:
     SceneLoader::LoadedNode loadNode(const ghoul::Dictionary& dictionary);
@@ -83,7 +84,7 @@ private:
     std::vector<SceneLoader::LoadedNode> loadDirectory(const std::string& path, lua_State* luaState);
 
     SceneLoader::LoadedCamera loadCamera(const ghoul::Dictionary& dictionary);
-    void addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> nodes);
+    std::vector<SceneGraphNode*> addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> nodes);
 };
 
 }

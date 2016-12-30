@@ -218,6 +218,55 @@ int loadScene(lua_State* L) {
     return 0;
 }
 
+int addSceneGraphNode(lua_State* L) {
+    using ghoul::lua::errorLocation;
+
+    int nArguments = lua_gettop(L);
+    SCRIPT_CHECK_ARGUMENTS("addSceneGraphNode", L, 1, nArguments);
+
+    ghoul::Dictionary d;
+    try {
+        ghoul::lua::luaDictionaryFromState(L, d);
+    }
+    catch (const ghoul::lua::LuaFormatException& e) {
+        LERRORC("addSceneGraphNode", e.what());
+        return 0;
+    }
+
+    SceneLoader loader;
+    SceneGraphNode* importedNode = loader.importNodeDictionary(*OsEng.renderEngine().scene(), d);
+    importedNode->initialize();
+        
+    return 1;
+}
+
+int removeSceneGraphNode(lua_State* L) {
+    using ghoul::lua::errorLocation;
+
+    int nArguments = lua_gettop(L);
+    SCRIPT_CHECK_ARGUMENTS("removeSceneGraphNode", L, 1, nArguments);
+
+    std::string nodeName = luaL_checkstring(L, -1);
+    SceneGraphNode* node = OsEng.renderEngine().scene()->sceneGraphNode(nodeName);
+    if (!node) {
+        LERRORC(
+            "removeSceneGraphNode",
+            errorLocation(L) << "Could not find node '" << nodeName << "'"
+            );
+        return 0;
+    }
+    SceneGraphNode* parent = node->parent();
+    if (!parent) {
+        LERRORC(
+            "removeSceneGraphNode",
+            errorLocation(L) << "Cannot remove root node"
+            );
+        return 0;
+    }
+    parent->detachChild(*node);
+    return 1;
+}
+
 } // namespace luascriptfunctions
 
 }  // namespace openspace

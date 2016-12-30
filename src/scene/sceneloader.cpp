@@ -134,7 +134,7 @@ std::unique_ptr<Scene> SceneLoader::loadScene(const std::string& path) {
     return std::move(scene);
 }
 
-void SceneLoader::importDirectory(Scene& scene, const std::string& path) {
+std::vector<SceneGraphNode*> SceneLoader::importDirectory(Scene& scene, const std::string& path) {
     lua_State* state = ghoul::lua::createNewLuaState();
     OnExit(
         // Delete the Lua state at the end of the scope, no matter what.
@@ -147,7 +147,17 @@ void SceneLoader::importDirectory(Scene& scene, const std::string& path) {
     ghoul::filesystem::Directory oldDirectory = FileSys.currentDirectory();
     std::vector<SceneLoader::LoadedNode> nodes = loadDirectory(path, state);
     FileSys.setCurrentDirectory(oldDirectory);
-    addLoadedNodes(scene, std::move(nodes));
+    return addLoadedNodes(scene, std::move(nodes));
+}
+
+SceneGraphNode* SceneLoader::importNodeDictionary(Scene& scene, const ghoul::Dictionary& dict) {
+    std::vector<SceneLoader::LoadedNode> loadedNodes;
+    loadedNodes.push_back(loadNode(dict));
+    std::vector<SceneGraphNode*> nodes = addLoadedNodes(scene, std::move(loadedNodes));
+    if (nodes.size() == 1) {
+        return nodes[0];
+    }
+    return nullptr;
 }
 
 SceneLoader::LoadedCamera SceneLoader::loadCamera(const ghoul::Dictionary& cameraDict) {
@@ -263,7 +273,7 @@ std::vector<SceneLoader::LoadedNode> SceneLoader::loadModule(const std::string& 
     return loadedNodes;
 };
 
-void SceneLoader::addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> loadedNodes) {
+std::vector<SceneGraphNode*> SceneLoader::addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNode> loadedNodes) {
     std::map<std::string, SceneGraphNode*> existingNodes = scene.nodesByName();
     std::map<std::string, SceneGraphNode*> addedNodes;
 
@@ -370,5 +380,12 @@ void SceneLoader::addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNo
     }
     // Update dependencies: sort nodes topologically.
     scene.updateDependencies();
+
+    // Return a vector of all added nodes.
+    std::vector<SceneGraphNode*> addedNodesVector;
+    for (auto& it : addedNodes) {
+        addedNodesVector.push_back(it.second);
+    }
+    return addedNodesVector;
 }
 }

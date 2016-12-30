@@ -448,20 +448,20 @@ void SceneGraphNode::addDependency(SceneGraphNode& dependency, UpdateScene updat
 }
 
 void SceneGraphNode::removeDependency(SceneGraphNode& dependency, UpdateScene updateScene) {
-    std::remove_if(
+    dependency._dependentNodes.erase(std::remove_if(
         dependency._dependentNodes.begin(),
         dependency._dependentNodes.end(),
         [this](const auto& d) {
             return this == d;
         }
-    );
-    std::remove_if(
+    ), dependency._dependentNodes.end());
+    _dependencies.erase(std::remove_if(
         _dependencies.begin(),
         _dependencies.end(),
         [&dependency](const auto& d) {
             return &dependency == d;
         }
-    );
+    ), _dependencies.end());
 
     if (_scene && updateScene) {
         _scene->updateDependencies();
@@ -470,13 +470,13 @@ void SceneGraphNode::removeDependency(SceneGraphNode& dependency, UpdateScene up
 
 void SceneGraphNode::clearDependencies(UpdateScene updateScene) {
     for (auto& dependency : _dependencies) {
-        std::remove_if(
+        dependency->_dependentNodes.erase(std::remove_if(
             dependency->_dependentNodes.begin(),
             dependency->_dependentNodes.end(),
             [this](const auto& d) {
                 return this == d;
             }
-        );
+        ), dependency->_dependentNodes.end());
     }
     _dependencies.clear();
 
