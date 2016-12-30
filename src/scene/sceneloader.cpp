@@ -371,8 +371,4 @@ void SceneLoader::addLoadedNodes(Scene& scene, std::vector<SceneLoader::LoadedNo
     // Update dependencies: sort nodes topologically.
     scene.updateDependencies();
 }
-
-
-
-
 }

@@ -254,110 +254,6 @@ const std::map<std::string, SceneGraphNode*>& Scene::nodesByName() const {
     return _nodesByName;
 }
 
-/*bool Scene::loadSceneInternal(const std::string& sceneDescriptionFilePath) {
-    ghoul::Dictionary dictionary;
-    
-    OsEng.windowWrapper().setSynchronization(false);
-    OnExit(
-        [](){ OsEng.windowWrapper().setSynchronization(true); }
-    );
-    
-    lua_State* state = ghoul::lua::createNewLuaState();
-    OnExit(
-           // Delete the Lua state at the end of the scope, no matter what
-           [state](){ ghoul::lua::destroyLuaState(state); }
-           );
-    
-    OsEng.scriptEngine().initializeLuaState(state);
-
-    ghoul::lua::loadDictionaryFromFile(
-        sceneDescriptionFilePath,
-        dictionary,
-        state
-    );
-
-    // Perform testing against the documentation/specification
-    openspace::documentation::testSpecificationAndThrow(
-        Scene::Documentation(),
-        dictionary,
-        "Scene"
-    );
-
-
-    _graph.loadFromFile(sceneDescriptionFilePath);
-
-    // Initialize all nodes
-    for (SceneGraphNode* node : _graph.nodes()) {
-        try {
-            bool success = node->initialize();
-            if (success)
-                LDEBUG(node->name() << " initialized successfully!");
-            else
-                LWARNING(node->name() << " not initialized.");
-        }
-        catch (const ghoul::RuntimeError& e) {
-            LERRORC(_loggerCat + "(" + e.component + ")", e.what());
-        }
-    }
-
-    // update the position of all nodes
-    // TODO need to check this; unnecessary? (ab)
-    for (SceneGraphNode* node : _graph.nodes()) {
-        try {
-            node->update({
-                glm::dvec3(0),
-                glm::dmat3(1),
-                1,
-                Time::ref().j2000Seconds() });
-        }
-        catch (const ghoul::RuntimeError& e) {
-            LERRORC(e.component, e.message);
-        }
-    }
-
-    for (auto it = _graph.nodes().rbegin(); it != _graph.nodes().rend(); ++it)
-        (*it)->calculateBoundingSphere();
-
-
-    _camera = std::make_unique<Camera>();
-    OsEng.renderEngine().setCamera(_camera.get());
-    OsEng.interactionHandler().setCamera(_camera.get());
-
-    // Read the camera dictionary and set the camera state
-    ghoul::Dictionary cameraDictionary;
-    if (dictionary.getValue(KeyCamera, cameraDictionary)) {
-        OsEng.interactionHandler().setCameraStateFromDictionary(cameraDictionary);
-    }
-
-    // If a PropertyDocumentationFile was specified, generate it now
-    const std::string KeyPropertyDocumentationType =
-        ConfigurationManager::KeyPropertyDocumentation + '.' +
-        ConfigurationManager::PartType;
-
-    const std::string KeyPropertyDocumentationFile =
-        ConfigurationManager::KeyPropertyDocumentation + '.' +
-        ConfigurationManager::PartFile;
-
-    const bool hasType = OsEng.configurationManager().hasKey(KeyPropertyDocumentationType);
-    const bool hasFile = OsEng.configurationManager().hasKey(KeyPropertyDocumentationFile);
-    if (hasType && hasFile) {
-        std::string propertyDocumentationType;
-        OsEng.configurationManager().getValue(KeyPropertyDocumentationType, propertyDocumentationType);
-        std::string propertyDocumentationFile;
-        OsEng.configurationManager().getValue(KeyPropertyDocumentationFile, propertyDocumentationFile);
-
-        propertyDocumentationFile = absPath(propertyDocumentationFile);
-        writePropertyDocumentation(propertyDocumentationFile, propertyDocumentationType, sceneDescriptionFilePath);
-    }
-
-
-    OsEng.runPostInitializationScripts(sceneDescriptionFilePath);
-
-    OsEng.enableBarrier();
-
-    return true;
-}*/
-
 SceneGraphNode* Scene::root() const {
     return _root.get();
 }
@@ -571,20 +467,7 @@ scripting::LuaLibrary Scene::luaLibrary() {
                 "string",
                 "Loads the scene found at the file passed as an "
                 "argument. If a scene is already loaded, it is unloaded first"
-            },
-            /*{
-                "addSceneGraphNode",
-                &luascriptfunctions::addSceneGraphNode,
-                "table",
-                "Loads the SceneGraphNode described in the table and adds it to the "
-                "SceneGraph"
-            },
-            {
-                "removeSceneGraphNode",
-                &luascriptfunctions::removeSceneGraphNode,
-                "string",
-                "Removes the SceneGraphNode identified by name"
-            }*/
+            }
         }
     };
 }

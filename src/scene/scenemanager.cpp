@@ -45,6 +45,4 @@ void SceneManager::unloadScene(Scene& scene) {
         return s.get() == &scene;
     });
 }
-
-
 }
