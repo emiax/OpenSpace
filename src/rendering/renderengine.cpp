@@ -169,10 +169,7 @@ bool RenderEngine::deinitialize() {
     for (auto screenspacerenderable : _screenSpaceRenderables) {
         screenspacerenderable->deinitialize();
     }
-
     MissionManager::deinitialize();
-
-    _scene->clear();
     return true;
 }
 

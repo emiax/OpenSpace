@@ -196,6 +196,11 @@ OpenSpaceEngine::~OpenSpaceEngine() {
 #ifdef OPENSPACE_MODULE_ONSCREENGUI_ENABLED
     _gui->deinitializeGL();
 #endif
+
+    _renderEngine->setScene(nullptr);
+    _renderEngine->setCamera(nullptr);
+    _sceneManager = nullptr;
+
     _interactionHandler->deinitialize();
     _renderEngine->deinitialize();
 
@@ -520,7 +525,7 @@ void OpenSpaceEngine::loadScene(const std::string& scenePath) {
         runPreInitializationScripts(scenePath);
     }
     catch (const ghoul::RuntimeError& e) {
-        LFATALC(e.component, e.message);
+        LERRORC(e.component, e.message);
     }
 
 
