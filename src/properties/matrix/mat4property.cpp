@@ -105,13 +105,17 @@ glm::mat4x4 fromStringConversion(const std::string& val, bool& success) {
 }
 
 bool toStringConversion(std::string& outValue, glm::mat4x4 inValue) {
-    outValue = "";
+    outValue = "{";
     for (glm::length_t i = 0; i < ghoul::glm_cols<glm::mat4x4>::value; ++i) {
+        outValue += "{";
         for (glm::length_t j = 0; j < ghoul::glm_rows<glm::mat4x4>::value; ++j) {
             outValue += std::to_string(inValue[i][j]) + ",";
         }
         outValue.pop_back();
+        outValue += "},";
     }
+    outValue.pop_back();
+    outValue = "}";
     return true;
 }
 

@@ -186,18 +186,18 @@ namespace openspace::properties {
                                                                                          \
     template <>                                                                          \
     template <>                                                                          \
-    TYPE PropertyDelegate<TemplateProperty<TYPE>>::fromString(const std::string& value,  \
+    TYPE PropertyDelegate<TemplateProperty<TYPE>>::fromJson(const std::string& value,    \
                                                               bool& success)             \
     {                                                                                    \
-        return FROM_STRING_LAMBDA_EXPRESSION(value, success);                            \
+        return FROM_JSON_LAMBDA_EXPRESSION(value, success);                              \
     }                                                                                    \
                                                                                          \
     template <>                                                                          \
     template <>                                                                          \
-    TYPE PropertyDelegate<NumericalProperty<TYPE>>::fromString(const std::string& value, \
+    TYPE PropertyDelegate<NumericalProperty<TYPE>>::fromJson(const std::string& value,   \
                                                                bool& success)            \
     {                                                                                    \
-        return PropertyDelegate<TemplateProperty<TYPE>>::fromString<TYPE>(               \
+        return PropertyDelegate<TemplateProperty<TYPE>>::fromJson<TYPE>(                 \
           value,                                                                         \
           success                                                                        \
         );                                                                               \
@@ -402,13 +402,20 @@ std::string NumericalProperty<T>::generateAdditionalJsonDescription() const {
 
 template <typename T>
 std::string NumericalProperty<T>::luaToJson(std::string luaValue) const {
-    if(luaValue[0] == '{') {
-        luaValue.replace(0, 1, "[");
-    }
-    if (luaValue[luaValue.size() - 1] == '}') {
-        luaValue.replace(luaValue.size() - 1, 1, "]");
-    }
-    return luaValue;
+    std::string json = luaValue;
+    std::transform(
+        luaValue.begin(),
+        luaValue.end(),
+        json.begin(),
+        [](const char& c) {
+        switch (c) {
+            case '{': return '[';
+            case '}': return ']';
+            default: return c;
+        }
+    });
+
+    return json;
 }
 
 template <typename T>

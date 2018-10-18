@@ -52,6 +52,7 @@ namespace {
     constexpr const char* GetPropertyTopicKey = "get";
     constexpr const char* LuaScriptTopicKey = "luascript";
     constexpr const char* SetPropertyTopicKey = "set";
+    constexpr const char* ShortcutPropertyTopicKey = "shortcut";
     constexpr const char* SubscriptionTopicKey = "subscribe";
     constexpr const char* TimeTopicKey = "time";
     constexpr const char* TriggerPropertyTopicKey = "trigger";
@@ -70,6 +71,7 @@ Connection::Connection(std::unique_ptr<ghoul::io::Socket> s, std::string address
     _topicFactory.registerClass<GetPropertyTopic>(GetPropertyTopicKey);
     _topicFactory.registerClass<LuaScriptTopic>(LuaScriptTopicKey);
     _topicFactory.registerClass<SetPropertyTopic>(SetPropertyTopicKey);
+    _topicFactory.registerClass<SubscriptionTopic>(ShortcutPropertyTopicKey);
     _topicFactory.registerClass<SubscriptionTopic>(SubscriptionTopicKey);
     _topicFactory.registerClass<TimeTopic>(TimeTopicKey);
     _topicFactory.registerClass<TriggerPropertyTopic>(TriggerPropertyTopicKey);
