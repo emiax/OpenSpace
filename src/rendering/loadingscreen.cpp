@@ -187,12 +187,12 @@ void LoadingScreen::render() {
     //
     // Render logo
     //
-    rendering::helper::renderBox(
+    rendering::helper.renderBox(
         glm::vec2(1.f) - ((LogoCenter + glm::vec2(1.f)) / 2.f),
         size,
         glm::vec4(1.f),
         *_logoTexture,
-        rendering::helper::Anchor::Center
+        rendering::Helper::Anchor::Center
     );
 
     //
@@ -210,18 +210,18 @@ void LoadingScreen::render() {
 
         const float w = ProgressbarLineWidth / screenAspectRatio;
         const float h = ProgressbarLineWidth;
-        rendering::helper::renderBox(
+        rendering::helper.renderBox(
             glm::vec2(1.f) - ((ProgressbarCenter + glm::vec2(1.f)) / 2.f),
             progressbarSize + glm::vec2(2 * w, 2 * h),
             ProgressbarOutlineColor,
-            rendering::helper::Anchor::Center
+            rendering::Helper::Anchor::Center
         );
 
-        rendering::helper::renderBox(
+        rendering::helper.renderBox(
             glm::vec2(1.f) - ((ProgressbarCenter + glm::vec2(1.f)) / 2.f),
             progressbarSize,
             glm::vec4(0.f, 0.f, 0.f, 1.f),
-            rendering::helper::Anchor::Center
+            rendering::Helper::Anchor::Center
         );
 
         glm::vec4 color;
@@ -240,11 +240,11 @@ void LoadingScreen::render() {
         }
 
         glm::vec2 p = glm::vec2(1.f) - ((ProgressbarCenter + glm::vec2(1.f)) / 2.f);
-        rendering::helper::renderBox(
+        rendering::helper.renderBox(
             p - progressbarSize / 2.f,
             progressbarSize * glm::vec2(progress, 1.f),
             color,
-            rendering::helper::Anchor::NW
+            rendering::Helper::Anchor::NW
         );
     }
 

@@ -502,7 +502,7 @@ void ScreenSpaceRenderable::draw(glm::mat4 modelTransform) {
     bindTexture();
     _shader->setUniform(_uniformCache.texture, unit);
 
-    glBindVertexArray(rendering::helper::vertexObjects.square.vao);
+    glBindVertexArray(rendering::helper.vertexObjects.square.vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glEnable(GL_CULL_FACE);

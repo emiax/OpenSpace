@@ -645,7 +645,7 @@ void LuaConsole::render() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
 
-    rendering::helper::renderBox(
+    rendering::helper.renderBox(
         glm::vec2(0.f, 0.f),
         glm::vec2(1.f, _currentHeight / res.y),
         _backgroundColor

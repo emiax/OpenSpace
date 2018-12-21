@@ -32,65 +32,61 @@ namespace ghoul::opengl {
     class Texture;
 } // namespace ghoul::opengl
 
-namespace openspace::rendering::helper {
+namespace openspace::rendering {
 
-enum class Anchor {
-    Center,
-    NW,
-    NE,
-    SW,
-    SE
+class Helper {
+public:
+
+    enum class Anchor {
+        Center,
+        NW,
+        NE,
+        SW,
+        SE
+    };
+
+    void initialize();
+    void deinitialize();
+
+    glm::mat4 ortho(const glm::vec2& position, const glm::vec2& size,
+        Anchor anchor = Anchor::NW);
+
+    void renderBox(ghoul::opengl::ProgramObject& program, GLint orthoLocation,
+        GLint colorLocation, const glm::vec2& position, const glm::vec2& size,
+        const glm::vec4& color, Anchor anchor = Anchor::NW);
+
+    void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
+        Anchor anchor = Anchor::NW);
+
+    void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
+        const ghoul::opengl::Texture& texture, Anchor anchor = Anchor::NW);
+
+    struct Shaders {
+        struct {
+            std::unique_ptr<ghoul::opengl::ProgramObject> program;
+            UniformCache(tex, hasTexture, shouldFlipTexture, ortho, color) cache;
+        } xyuvrgba;
+
+        struct {
+            std::unique_ptr<ghoul::opengl::ProgramObject> program;
+            UniformCache(tex, hasTexture, shouldFlipTexture, ortho, color) cache;
+        } screenfilling;
+    } shaders;
+
+    struct VertexObjects {
+        struct {
+            GLuint vao;
+            GLuint vbo;
+        } square;
+
+        struct {
+            GLuint vao;
+        } empty;
+    } vertexObjects;
 };
 
-void initialize();
-void deinitialize();
+extern Helper helper;
 
-glm::mat4 ortho(const glm::vec2& position, const glm::vec2& size,
-    Anchor anchor = Anchor::NW);
-
-void renderBox(ghoul::opengl::ProgramObject& program, GLint orthoLocation,
-    GLint colorLocation, const glm::vec2& position, const glm::vec2& size,
-    const glm::vec4& color, Anchor anchor = Anchor::NW);
-
-void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
-    Anchor anchor = Anchor::NW);
-
-void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
-    const ghoul::opengl::Texture& texture, Anchor anchor = Anchor::NW);
-
-struct Shaders {
-    struct {
-        std::unique_ptr<ghoul::opengl::ProgramObject> program;
-        UniformCache(tex, hasTexture, shouldFlipTexture, ortho, color) cache;
-    } xyuvrgba;
-
-    struct {
-        std::unique_ptr<ghoul::opengl::ProgramObject> program;
-        UniformCache(tex, hasTexture, shouldFlipTexture, ortho, color) cache;
-    } screenfilling;
-};
-
-struct VertexObjects {
-    struct {
-        GLuint vao;
-        GLuint vbo;
-    } square;
-
-    struct {
-        GLuint vao;
-    } empty;
-};
-
-namespace detail {
-
-Shaders& gShadersConstructor();
-VertexObjects& gVertexObjectsConstructor();
-
-} // namespace detail
-
-static Shaders& shaders = detail::gShadersConstructor();
-static VertexObjects& vertexObjects = detail::gVertexObjectsConstructor();
-
-} // namespace openspace::rendering::helper
+} // namespace openspace::rendering
 
 #endif // __OPENSPACE_CORE___HELPER___H__

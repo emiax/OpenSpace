@@ -116,23 +116,9 @@ void main() {
 
 } // namespace
 
-namespace openspace::rendering::helper {
+namespace openspace::rendering {
 
-namespace detail {
-
-Shaders& gShadersConstructor() {
-    static Shaders g;
-    return g;
-}
-
-VertexObjects& gVertexObjectsConstructor() {
-    static VertexObjects g;
-    return g;
-}
-
-} // namespace detail
-
-void initialize() {
+void Helper::initialize() {
     ghoul_assert(!isInitialized, "Rendering Helper initialized twice");
 
     //
@@ -233,7 +219,7 @@ void initialize() {
     isInitialized = true;
 }
 
-void deinitialize() {
+void Helper::deinitialize() {
     ghoul_assert(isInitialized, "Rendering Helper not initialized");
 
     if (!xyuvrgbaVertexFile.empty()) {
@@ -261,7 +247,7 @@ void deinitialize() {
     isInitialized = false;
 }
 
-glm::mat4 ortho(const glm::vec2& position, const glm::vec2& size, Anchor anchor) {
+glm::mat4 Helper::ortho(const glm::vec2& position, const glm::vec2& size, Anchor anchor) {
     const float xSize = size.x;
     const float ySize = size.y;
     float xPos = (position.x - 0.5f) * 2.f;
@@ -297,7 +283,7 @@ glm::mat4 ortho(const glm::vec2& position, const glm::vec2& size, Anchor anchor)
 }
 
 
-void renderBox(ghoul::opengl::ProgramObject& program, GLint orthoLocation,
+void Helper::renderBox(ghoul::opengl::ProgramObject& program, GLint orthoLocation,
                GLint colorLocation, const glm::vec2& position, const glm::vec2& size,
                const glm::vec4& color, Anchor anchor)
 {
@@ -309,7 +295,7 @@ void renderBox(ghoul::opengl::ProgramObject& program, GLint orthoLocation,
     glBindVertexArray(0);
 }
 
-void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
+void Helper::renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
     Anchor anchor)
 {
     auto& shdr = shaders.xyuvrgba;
@@ -326,7 +312,7 @@ void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4
     shdr.program->deactivate();
 }
 
-void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
+void Helper::renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
                const ghoul::opengl::Texture& texture, Anchor anchor)
 {
     auto& shdr = shaders.xyuvrgba;
@@ -349,5 +335,6 @@ void renderBox(const glm::vec2& position, const glm::vec2& size, const glm::vec4
     shdr.program->deactivate();
 }
 
+Helper helper;
 
-} // namespace openspace::rendering::helper
+} // namespace openspace::rendering

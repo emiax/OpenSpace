@@ -620,7 +620,7 @@ void RenderEngine::renderOverlays(const ShutdownInformation& shutdownInfo) {
 void RenderEngine::renderEndscreen() {
     glEnable(GL_BLEND);
 
-    rendering::helper::renderBox(
+    rendering::helper.renderBox(
         glm::vec2(0.f, 0.f),
         glm::vec2(1.f, 1.f),
         glm::vec4(0.f, 0.f, 0.f, 0.5f)

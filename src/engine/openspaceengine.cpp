@@ -340,7 +340,7 @@ void OpenSpaceEngine::initializeGL() {
     glbinding::Binding::initialize(global::windowDelegate.openGLProcedureAddress);
     //glbinding::Binding::useCurrentContext();
 
-    rendering::helper::initialize();
+    rendering::helper.initialize();
 
     // clear the screen so the user doesn't have to see old buffer contents left on the
     // graphics card
@@ -823,7 +823,7 @@ void OpenSpaceEngine::deinitializeGL() {
 
     global::deinitializeGL();
 
-    rendering::helper::deinitialize();
+    rendering::helper.deinitialize();
 
     LTRACE("OpenSpaceEngine::deinitializeGL(end)");
 }
